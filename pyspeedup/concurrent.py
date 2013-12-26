@@ -40,7 +40,7 @@ def taskManager(a_queue,a_dict,a_func_marshal,a_func_name,an_event):
 class Cache():
     '''An asynchronous cache implementation. Maintains multiple recursive calls stably.'''
     def __init__(self,func):
-        for n in set(dir(func)) - set(dir(self)):
+        for n in list(n for n in set(dir(func)) - set(dir(self)) if n != '__class__'):
             setattr(self, n, getattr(func, n))
         self._m=Manager()
         self._e= self._m.Event()

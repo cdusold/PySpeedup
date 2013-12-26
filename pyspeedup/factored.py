@@ -70,13 +70,13 @@ class Fraction(numbers.Rational): #TODO Update into FactoredFraction or Factored
                     raise NotImplementedError()
                 self[i]=args.count(i)
     def __iter__(self):
-        '''This would be useful to iterate through primes.'''
+        '''TODO: This would be useful to iterate through primes.'''
         raise NotImplementedError()
     def __next__(self):
-        '''Needs to be implemented with the above.'''
+        '''TODO: Needs to be implemented with the above.'''
         raise NotImplementedError()
     def __reversed__(self):
-        '''Probably not important. Implement if needed.'''
+        '''TODO: Probably not important. Implement if needed.'''
         raise NotImplementedError()
     def __getitem__(self,key):
         if not isinstance(key,numbers.Integral):
@@ -295,7 +295,7 @@ class Fraction(numbers.Rational): #TODO Update into FactoredFraction or Factored
                 self[x]*=i
             return self
         return NotImplemented
-class FactoredInt(FactoredFraction, numbers.Integral):
+class Integer(Fraction, numbers.Integral):
     def __setitem__(self,key,value):
         if not isinstance(key,numbers.Integral) or not isinstance(value,numbers.Integral):
             raise TypeError()
@@ -313,3 +313,6 @@ class FactoredInt(FactoredFraction, numbers.Integral):
             self._d[abs(key)]=value
         else:
             self._d[key]=value
+
+if __name__ == '__main__':
+    print(int(Fraction(2)*Fraction(2)))
