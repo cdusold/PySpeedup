@@ -3,30 +3,8 @@ import numbers
 import functools
 import operator
 import math
-from algorithms import cached
+from algorithms import factor
 
-@cached(10000)
-def factor(N):
-    if N<4:
-        return [N]
-    if N%2==0:
-        t=factor(N//2)
-        t.insert(0,2)
-        return t
-    a = math.ceil(math.sqrt(N))
-    b2 = a*a - N
-    b=math.floor(math.sqrt(b2))
-    while b**2!=b2:
-        a = a + 1    # equivalently: b2 ? b2 + 2*a + 1
-        b2 = a*a - N #               a ? a + 1
-        b=math.floor(math.sqrt(b2))
-    if a-b==1:
-        return [a+b]
-    else:
-        t=factor(a-b)
-        for i in factor(a+b):
-            t.append(i)
-        return list(sorted(t))
 def product(xs):
     return functools.reduce(operator.mul, xs, 1)
 class Fraction(numbers.Rational): #TODO Update into FactoredFraction or FactoredRational and iron out Int only support.
