@@ -1,192 +1,6 @@
-import random as rnd
-import time
-import unittest as ut
-import copy
-import operator
+from pyspeedup import concurrent
 
-class _Cached:
-    "This will shine the most with recursive functions. But the recursion has to call the cached function, not the function itself."
-    f=None
-    n=0
-    c=None
-    pop=None
-    def popRandom(self):
-        del self.c[rnd.choice(list(self.c.keys()))]
-    def __init__(self,function, numberOfCachedValues, popType='random'):
-        for n in list(n for n in set(dir(function)) - set(dir(self)) if n != '__class__'):
-            setattr(self, n, getattr(function, n))
-        self.f=function
-        self.n=numberOfCachedValues
-        self.c={}
-        if popType=='random':
-            self.pop=self.popRandom
-    def __call__(self,*args, **kwargs):
-        i=str(args)+str(kwargs)
-        if i in self.c:
-            return copy.deepcopy(self.c[i])
-        else:
-            t=self.f(*args,**kwargs)
-            if len(self.c)>=self.n and self.n!=-1:
-                self.pop()
-            self.c[i]=copy.deepcopy(t)
-            return t
-def cached(numberOfCachedValues, popType='random'):
-    '''A decorator that creates a simplistic cached function with minimal overhead.'''
-    def decorator(f):
-        return _Cached(f,numberOfCachedValues,popType)
-    return decorator
-            
-class Polynomial():
-    "This class utilizes dict of keys sparse polynomial implementation."
-    _d={}
-    _max=-1
-    def __init__(self,*args,**kwargs):
-        if len(kwargs)>0:
-            self._d=kwargs
-        if len(args)>0:
-            self._max=args[0]
-            if len(args)>1:
-                max=self._max
-                if len(args)>2:
-                    max=args[2]
-                for i in range(0,max+args[1],args[1]):
-                    self._d[i]=1
-    def __add__(self,other):
-        out={}
-        for i in set(self.keys()).union(set(other.keys())):
-            out[i]=self._d.get(i,0)+other._d.get(i,0)
-        return Polynomial(**out)
-    def __iadd__(self,other):
-        for i in set(self.keys()).union(set(other.keys())):
-            self._d[i]=self._d.get(i,0)+other._d.get(i,0)
-        return self
-    def __sub__(self,other):
-        out={}
-        for i in set(self.keys()).union(set(other.keys())):
-            out[i]=self._d.get(i,0)-other._d.get(i,0)
-        return Polynomial(**out)
-    def __iadd__(self,other):
-        for i in set(self.keys()).union(set(other.keys())):
-            self._d[i]=self._d.get(i,0)-other._d.get(i,0)
-        return self
-    def __mul__(self,other):
-        out={}
-        for i in self.keys():
-            for j in other.keys():
-                if max>0 and i+j>max:
-                    continue
-                out[i+j]=out.get(i+j,0)+self[i]*other[j]
-
-class Timer:    
-    def __enter__(self):
-        self.start = time.clock()
-        return self
-    def __exit__(self, *args):
-        self.end = time.clock()
-        self.interval = self.end - self.start
-        
-#Cache this. Multiprocessed would work decently, although it's less necessary.
-@cached(100)
-def fibonacci(n): #Source: http://stackoverflow.com/a/14782458/786020
-    """Compute the nth Fibonacci number."""
-    if n<0:
-        raise Exception("Reverse fibonacci sequence not implemented.")
-    if n <= 3:
-        return (0, 1, 1, 2)[n]
-    elif n % 2 == 0:
-        a = fibonacci(n // 2 - 1)
-        b = fibonacci(n // 2)
-        return ((2 * a + b) * b)
-    else:
-        a = fibonacci(n // 2)
-        b = fibonacci(n // 2 + 1)
-        return (a * a + b * b)
-
-def uncachedFib(a):
-    if a in [0,1]:
-        return a
-    if a<0:
-        raise Exception("Reverse fibonacci sequence not implemented.")
-    return uncachedFib(a-1)+uncachedFib(a-2)
-    
-class cachedTest(ut.TestCase):
-    c=None
-    def setUp(self):
-        @cached(1)
-        def fib(a):
-            if a in [0,1]:
-                return a
-            if a<0:
-                raise Exception("Reverse fibonacci sequence not implemented.")
-            return fib(a-1)+fib(a-2)
-        self.c=fib
-    def test_fib(self):
-        self.assertEqual(self.c(0),0,"The zeroth element of the Fibonnaci sequence is 0, not {}.".format(str(self.c(0))))
-        self.assertEqual(self.c(1),1,"The first element of the Fibonnaci sequence is 1, not {}.".format(str(self.c(1))))
-        self.assertEqual(self.c(2),1,"The second element of the Fibonnaci sequence is 1, not {}.".format(str(self.c(2))))
-        self.assertEqual(self.c(3),2,"The third element of the Fibonnaci sequence is 2, not {}.".format(str(self.c(3))))
-        self.assertEqual(self.c(4),3,"The fourth element of the Fibonnaci sequence is 3, not {}.".format(str(self.c(4))))
-        self.assertEqual(self.c(5),5,"The fifth element of the Fibonnaci sequence is 5, not {}.".format(str(self.c(5))))
-        #self.assertRaises(f(-1)
-    def test_init(self):
-        self.assertEqual(len(self.c.c),0,"The cache was malformed.")
-        self.assertEqual(self.c.n,1,"The cache max size was not recorded properly.")
-        self.assertEqual(self.c.f(0),uncachedFib(0),"The function was not entered correctly.")
-    def test_cache(self):
-        i=self.c(0)
-        self.assertEqual(len(self.c.c),1,"The value was not cached properly.")
-        self.assertEqual(self.c(0),i,"The cached answer was incorrect.")
-    def test_pop(self):
-        self.c.n=3
-        i=self.c(3)
-        self.assertEqual(len(self.c.c),3,"Recursion not properly set up for caching.")
-        i=self.c(4)
-        self.assertEqual(len(self.c.c),3,"Maximum cache size not implemented correctly.")
-    def test_speed(self):
-        t1=None
-        t2=None
-        with Timer() as t1:
-            k=uncachedFib(32)
-        self.c.n=-1
-        with Timer() as t2:
-            k=self.c(32)
-        self.assertLess(t2.interval,t1.interval,"There isn't a speed up... This is useless then, I suppose.")
-        with Timer() as t1:
-            k=self.c(32)
-        self.assertGreater(t2.interval,t1.interval,"There isn't a speed up... This is useless then, I suppose.")
-
-def invertMod(number,modulo):
-    '''Uses the extended Euclidean algorithm to deduce the inverse of 'number' mod 'modulo'.'''
-    #Since the quotient values are used in reverse order, postfix recursion makes sense for this equation.
-    # The following recursively uses Euclidean divison, then applies the tabular algorithm upon returning.
-    def iM(dividend,divisor):
-        '''A recursive helper function for use in inverting.'''
-        (q,r)=divmod(dividend,divisor) #Python native function that performs Euclidean division.
-        if r==0:
-            if divisor!=1:
-                raise Exception("Number not invertible in given set of integers.")
-            return (0,1)
-        prev,solution=iM(divisor,r)
-        #Python syntax for quick value reassignment, which allows for swapping without a temporary variable.
-        prev,solution=-solution,-(prev+q*solution) #Negatives account for sign change in algorithm lazily.
-        return prev,solution
-    _,solution=iM(modulo,number)
-    assert(solution*number%modulo==1)
-    return solution%modulo
-
-@cached(10000)     
-def gcd(a,b):
-    r=a%b
-    if r==0:
-        return b
-    else:
-        return gcd(b,r)
-
-def f(q):
-    for i in range(100):
-        q.append(i**2)
-        time.sleep(.25)
-
+@concurrent.Cache
 def func(size,max,min):
     if size<min:
         return 1 #Empty
@@ -200,7 +14,7 @@ def func(size,max,min):
     return count
 
 def powersInMod(n):
-    return len(set((x*x)%n for x in range(0,n)))
+    return set((x*x)%n for x in range(0,n//2+1))
 
 def isSquare(n):
     '''Checks for perfect squares by checking mod 64 to rule out 52/64 cases immediately.'''
@@ -209,7 +23,7 @@ def isSquare(n):
         return m*m==n
     return False
 isSquare.mod=64 #This and the below can be changed if a different value is deemed better.
-isSquare.set={0, 1, 4, 9, 16, 17, 25, 33, 36, 41, 49, 57} #The set of all perfect squares mod the above number.
+isSquare.set=powersInMod(isSquare.mod) #The set of all perfect squares mod the above number.
 
 @cached(10000)
 def factor(N):
@@ -423,21 +237,6 @@ def Shanks(n,alpha,beta,displayLists=False):
     except: #If it exceeds the index, there was no match, and thus...
         raise Exception("No solution.")
 
-def invMod(number,modulo):
-    quotients=[] #Stores the quotients for use in constructing the inverse.
-    (q,r)=divmod(modulo,number) #Python native function that performs Euclidean division.
-    dividend,number=number,r #Python syntax for quick value reassignment, which allows for swapping without a temporary variable.
-    while r!=0:
-        quotients.append(q)
-        (q,r)=divmod(dividend,number)
-        dividend,number=number,r
-    if dividend!=1: #Then the gcd is not one, and therefore...
-        raise Exception("Number not invertible in given set of integers.")
-    prev,solution=0,1 #Set the tabular initial values.
-    while len(quotients)>0: #traverse the list backwards to construct the inverse.
-        prev,solution=-solution,-(prev+quotients.pop()*solution) #Negatives account for sign change in algorithm lazily.
-    return solution%modulo
-
 class ElGamal:
     '''A very basic ElGamal implementation.'''
     def __init__(self,p,alpha,a,beta):
@@ -465,23 +264,6 @@ m=[]
 for i in c:
     m.append(eG.decrypt(i[0],i[1]))
 decode(m)
-
-#maxN=0
-#maxD=0
-#for n in range(1,1000):
-    #i=n
-    #while i%2==0:
-        #i/=2
-    #while i%5==0:
-        #i/=5
-    #d=1
-    #test=10
-    #while (test-1)%i:
-        #test*=10
-        #d+=1
-    #if d>=maxD:
-        #maxN=n
-        #maxD=d
 
 #def abundant(n):
     #if n<12:
@@ -514,6 +296,7 @@ decode(m)
             #break
     #if add==True:
         #s+=i
+
 #i=1
 #n=4
 #while n>0:
@@ -522,11 +305,3 @@ decode(m)
 #        print i,b
 #        n-=1
 #    i+=1
-
-#def isSquare(n):
-#    m=math.floor(math.sqrt(n))
-#    return m*m==n
-
-
-if __name__ == '__main__':
-    ut.main()

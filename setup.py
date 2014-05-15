@@ -13,12 +13,11 @@ setup(
     version = "0.0.1",
     author = "Chris Dusold",
     author_email = "PySpeedup@ChrisDusold.com",
-    description = ("An demonstration of how to create, document, and publish "
-                                   "to the cheese shop a5 pypi.org."),
+    description = ("A multiprocess framework for efficient calculations."),
     license = read("LICENSE"),
     keywords = "algorithmic speedup framework",
     url = "https://github.com/cdusold/PySpeedup",
-    packages=['pyspeedup'],#, 'tests'],
+    packages=['pyspeedup', 'tests'],
     long_description=read('README.md'),
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",

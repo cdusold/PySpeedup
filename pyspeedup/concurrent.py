@@ -15,7 +15,8 @@ def _parallelRun(a_queue,a_dict,a_func_marshal,a_func_name,a_task, an_event):
     '''This runs a function, piping recursive calls to the _taskManager through a provided Queue.'''
     try:
         a_func=_FunctionType(_loads(a_func_marshal),globals(),"a_func")
-        globals()[a_func_name]=_partial(_getValue,a_dict,a_queue,an_event)
+        globals()[a_func_name]=_partial(_getValue,a_dict,a_queue,an_event,True)
+        globals()[a_func_name].apply_async=_partial(_getValue,a_dict,a_queue,an_event,False)
         a_result=a_func(*a_task)
         a_dict[a_task]=a_result
         an_event.set()
@@ -24,11 +25,13 @@ def _parallelRun(a_queue,a_dict,a_func_marshal,a_func_name,a_task, an_event):
         _traceback.print_exc()
         a_dict[a_task]=None
         an_event.clear()
-def _getValue(a_dict,a_queue,an_event,*item):
+def _getValue(a_dict,a_queue,an_event,wait,*item):
     '''This gets the cached value for a task, or submits a new job and waits on it to complete.'''
     if item not in a_dict:
         a_dict[item]=_StillWaiting
         a_queue.put(item)
+    if not wait:
+        return a_dict[item]
     temp=a_dict[item]
     while temp is _StillWaiting:
         an_event.wait(.1)
@@ -54,11 +57,9 @@ class Cache():
         self._t=_Process(target=_taskManager,args=(self._q,self._d,self._f,self._n, self._e))
         self._t.start()
     def apply_async(self,*item):
-        self._d[item]=_StillWaiting
-        self._q.put(item)
-        #print("Starting {}...".format(str(item)))
+        return _getValue(self._d,self._q,self._e,False,*item)
     def __call__(self,*item):
-        return _getValue(self._d,self._q,self._e,*item)
+        return _getValue(self._d,self._q,self._e,True,*item)
     def __del__(self):
         self._t.terminate()
     def __repr__(self):
