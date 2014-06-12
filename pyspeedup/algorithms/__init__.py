@@ -4,6 +4,8 @@ from _divideMod import divideMod
 from _invMod import invMod
 from _gcd import gcd
 from _legendre import jacobi_symbol
-from _shankstonelli import tsSquareRoot
+from _squares import tsSquareRoot
 from _indexCalculus import discreteLog
 from _indexCalculus import rowReduce
+from _squares import isSquare
+from _factor import factor

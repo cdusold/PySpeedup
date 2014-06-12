@@ -1,4 +1,6 @@
 from pyspeedup import concurrent
+from pyspeedup.algorithms import *
+import random
 
 @concurrent.Cache
 def func(size,max,min):
@@ -12,46 +14,6 @@ def func(size,max,min):
     for i in range(size-max+1):
         count+= 2 * func(i,max,min)
     return count
-
-def powersInMod(n):
-    return set((x*x)%n for x in range(0,n//2+1))
-
-def isSquare(n):
-    '''Checks for perfect squares by checking mod 64 to rule out 52/64 cases immediately.'''
-    if n%isSquare.mod in isSquare.set:
-        m=math.floor(math.sqrt(n))
-        return m*m==n
-    return False
-isSquare.mod=64 #This and the below can be changed if a different value is deemed better.
-isSquare.set=powersInMod(isSquare.mod) #The set of all perfect squares mod the above number.
-
-@cached(10000)
-def factor(N):
-    '''Utilizes Fermat's sieve and recursive caching to reduce factorization time, mostly in repeated factorization.'''
-    if N<0:
-        t=factor(-N)
-        t.insert(0,-1)
-        return t #Works on positive and negative integers
-    if N<4:
-        return [N] #Positive integers under 4 are factored already (ignoring 1)
-    if N%2==0:
-        t=factor(N//2)
-        t.insert(0,2)
-        return t
-    a = int(math.ceil(math.sqrt(N)))
-    b2 = a*a - N
-    while not isSquare(b2):
-        b2+=a+a+1
-        a += 1    # equivalently: a+=1; b2 = a*a - N
-    b=int(math.floor(math.sqrt(b2)))
-    assert b*b==b2
-    if a-b==1:
-        return [a+b]
-    else:
-        t=factor(a-b)
-        for i in factor(a+b):
-            t.append(i)
-        return list(sorted(t))
 
 def certificateOfPrimitivity(number,modulo):
     '''Generates a set of the distinct prime factors, and their least nonnegative residues of the given number in the given modulo.'''

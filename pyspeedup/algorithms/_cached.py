@@ -1,6 +1,8 @@
 import random as rnd
 import copy
 
+'''This is a non-multiprocessed cache with the most simplistic design for simple case uses.
+    Also used for benchmarking against concurrent designs.'''
 class _Cached:
     "This will shine the most with recursive functions. But the recursion has to call the cached function, not the function itself."
     f=None

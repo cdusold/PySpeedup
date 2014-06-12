@@ -1,6 +1,19 @@
+import math
 from pyspeedup.algorithms import jacobi_symbol
 
-def tsSquareRoot(a,p):
+def powersInMod(n):
+    return set((x*x)%n for x in range(0,n//2+1))
+
+def isSquare(n):
+    '''Checks for perfect squares by checking mod 64 to rule out 52/64 cases immediately.'''
+    if n%isSquare.mod in isSquare.set:
+        m=math.floor(math.sqrt(n))
+        return m*m==n
+    return False
+isSquare.mod=64 #This can be changed if a different value is deemed better.
+isSquare.set=powersInMod(isSquare.mod) #The set of all perfect squares mod the above number.
+
+def tsSquareRoot(a,p): #Currently requires p to be prime.
     '''Calculates the square root mod p of a.'''
     jacobi=jacobi_symbol(a,p)
     if jacobi==-1:

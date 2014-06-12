@@ -1,3 +1,7 @@
+from pyspeedup.algorithms import gcd
+from pyspeedup.algorithms import divideMod
+from pyspeedup.algorithms import invMod
+
 def discreteLog(n,a,p,primes):
     '''Uses index calculus to find n=a^m mod p using the list of primes provided.'''
     #break up n using primes provided.

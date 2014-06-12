@@ -1,4 +1,6 @@
 import math, operator
+from pyspeedup.algorithms import invMod
+
 def Shanks(n,alpha,beta):
     '''Uses the Shanks algorithm to solve the discrete log problem for log_alpha(beta) in mod n.'''
     m=int(math.ceil(math.sqrt(n)))

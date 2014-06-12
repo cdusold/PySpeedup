@@ -20,22 +20,11 @@ def jacobi_symbol(a, n):
         return (-1)**((n-1)/2) * jacobi_symbol(-1*a, n)
 
     if a % 2 == 0: #(a*b/n)=(a/n)*(b/n)
+        jacobi_symbol.apply_async(2, n)
+        jacobi_symbol.apply_async(a/2, n)
         return jacobi_symbol(2, n) * jacobi_symbol(a / 2, n)
     else: #Using the law of quadratic reciprocity:
         if a % 4 == n % 4 == 3:
             return -1 * jacobi_symbol(n, a)
         else:
             return jacobi_symbol(n, a)
-
-def printCycle(point,a,b,p):
-    p1=(point[0],point[1])
-    p2=(point[0],point[1])
-    p2=addition(p1,p2,a,b,p)
-    ps=[p1,p2]
-    n=1
-    while p1!=p2:
-        p2=addition(p1,p2,a,b,p)
-        ps.append(p2)
-        n+=1
-    print(ps)
-    return n
