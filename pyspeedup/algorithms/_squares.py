@@ -23,9 +23,7 @@ def tsSquareRoot(a,p): #Currently requires p to be prime.
     while s%2==0: #Find p-1=s*2^e with odd s.
         e+=1
         s//=2
-    n=2
-    while jacobi_symbol(n,p)!=-1:
-        n+=1 #Find an n s.t. (n/p)==-1
+    n=findQuadraticNonresidue(p)
     x=pow(a,((s+1)/2),p) #first guess
     b=pow(a,s,p) #first guess correction
     g=pow(n,s,p) #quantity to modify x and b
@@ -52,3 +50,13 @@ def tsSquareRoot(a,p): #Currently requires p to be prime.
         b=(b*g)%p
         r=m
     return x
+
+def findQuadraticNonresidue(p):
+    if p%8 in [3,5]:
+        return 2
+    elif p%8==7:
+        return p-2
+    n=2
+    while jacobi_symbol(n,p)!=-1:
+        n+=1 #Find an n s.t. (n/p)==-1
+    return n
