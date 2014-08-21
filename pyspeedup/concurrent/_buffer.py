@@ -1,3 +1,8 @@
+"""
+.. moduleauthor:: Chris Dusold <PySpeedup@chrisdusold.com>
+
+
+"""
 from multiprocessing import Queue
 from multiprocessing import Process
 from multiprocessing import Manager
@@ -24,8 +29,63 @@ def _run(a_queue,a_gen_marshal,a_gen_name,a_list,an_event):
     except Exception as e:
         print("Dunno what to tell you bud: {}".format(str(e)))
 class Buffer():
-    "Current implementation requires the values be uniformly increasing (like the primes, or positive fibonnaci sequence)."
+    """
+    An implementation of a concurrent buffer that runs a generator in a
+    separate processor.
+
+    .. note:: The current implementation requires the values be uniformly
+              increasing (like the primes, or positive fibonnaci sequence).
+              The halting condition is currently once the value reached is
+              greater than or equal to the one being searched for.
+
+    The resultant buffered object can be referenced as a list or an iterable.
+    The easiest way to use this class is by utlizing the utility function
+    :func:`~pyspeedup.concurrent.buffer`.
+
+    For example, one can use it in the following way::
+
+        >>> @buffer(4)
+        ... def count():
+        ...     i=0
+        ...     while 1:
+        ...         yield i
+        ...         i+=1
+        ...
+        >>> count[0]
+        0
+        >>> count[15]
+        15
+        >>> for v,i in enumerate(count):
+        ...     if v!=i:
+        ...         print("Fail")
+        ...     if v==5:
+        ...         print("Success")
+        ...         break
+        ...
+        Success
+
+    It can also be used as a generator by calling the object like so::
+
+        >>> for v,i in enumerate(count()):
+        ...     if v!=i:
+        ...         print("Fail")
+        ...     if v==5:
+        ...         print("Success")
+        ...         break
+        ...
+        Success
+
+    The sequence generated is cached, so the output stored will be static.
+
+    .. note:: As of yet all values are stored in a list on the backend.
+              There is no memory management built in to this version, but
+              is planned to be integrated soon. Be careful not to accidentally
+              cache too many or too large of values, as they many
+    """
     def __init__(self,generator,buffersize=16,haltCondition=None):
+        for n in list(n for n in set(dir(generator)) - set(dir(self)) if n != '__class__'):
+            setattr(self, n, getattr(generator, n))
+        setattr(self, "__doc__", getattr(generator, "__doc__"))
         self._generator,self._buffersize=generator,buffersize
         self._m=Manager()
         self._e=self._m.Event()
@@ -41,6 +101,10 @@ class Buffer():
         self._thread.terminate()
         del self._thread
     def __call__(self):
+        """ Creates a generator that yields the values from the original
+        starting with the first value.
+
+        """
         i=0
         while True:
             try:
@@ -84,6 +148,10 @@ class Buffer():
                     except:
                         print("Starts failing at {}. Manager debug info is {}.".format(cache_len, self._m._debug_info()))
     def pull_values(self):
+        """ A utility method used to pull and cache values from the
+        concurrently run generator.
+
+        """
         try:
             for i in range(self._buffersize):
                 self._cache.append(self._q.get(False))
@@ -92,7 +160,15 @@ class Buffer():
     def __repr__(self):
         return 'concurrent._Buffer('+self.func.__repr__()+','+str(self._buffersize)+',None)'
 def buffer(buffersize=16,haltCondition=None):
-    '''A decorator to create a concurrently buffered generator.'''
+    '''A decorator to create a concurrently buffered generator.
+
+    Used with ``@buffer([buffersize,[haltCondition]])`` as described in :class:`~pyspeedup.concurrent.Buffer`'s documentation.
+    '''
     def decorator(f):
         return Buffer(f,buffersize,haltCondition)
     return decorator
+
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()

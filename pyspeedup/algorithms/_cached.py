@@ -30,7 +30,10 @@ class _Cached:
             self.c[i]=copy.deepcopy(t)
             return t
 def cached(numberOfCachedValues, popType='random'):
-    '''A decorator that creates a simplistic cached function with minimal overhead.'''
+    '''A decorator that creates a simplistic cached function with minimal overhead.
+
+    This provides very simplistic and quick cache.
+    '''
     def decorator(f):
         return _Cached(f,numberOfCachedValues,popType)
     return decorator

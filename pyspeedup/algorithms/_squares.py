@@ -2,6 +2,8 @@ import math
 from pyspeedup.algorithms import jacobi_symbol
 
 def powersInMod(n):
+    ''' Computes all the squares in the integers mod n.
+    '''
     return set((x*x)%n for x in range(0,n//2+1))
 
 def isSquare(n):

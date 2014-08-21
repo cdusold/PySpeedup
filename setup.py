@@ -16,9 +16,9 @@ setup(
     description = ("A multiprocess framework for efficient calculations."),
     license = read("LICENSE"),
     keywords = "algorithmic speedup framework",
-    url = "https://github.com/cdusold/PySpeedup",
+    url = "http://pyspeedup.rtfd.org/",
     packages=['pyspeedup', 'tests'],
-    long_description=read('README.md'),
+    long_description=read('README.rst'),
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
         "Intended Audience :: Developers",
