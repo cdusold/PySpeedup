@@ -17,7 +17,7 @@ setup(
     license = read("LICENSE"),
     keywords = "algorithmic speedup framework",
     url = "http://pyspeedup.rtfd.org/",
-    packages=['pyspeedup', 'tests'],
+    packages=['pyspeedup', 'pyspeedup.concurrent', 'pyspeedup.algorithms', 'tests'],
     long_description=read('README.rst'),
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
