@@ -20,11 +20,7 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
-About
-=====
-
-.. automodule:: pyspeedup
-   :members:
+.. include:: ../README.rst
 
 Concurrent Module
 =================
