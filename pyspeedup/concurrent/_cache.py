@@ -142,7 +142,8 @@ class Cache():
         globals()[self._n]=partial(_getValue,self._d,self._q,self._e,True,self.func)
         globals()[self._n].apply_async=partial(_getValue,self._d,self._q,self._e,False,self.func)
         #setattr(globals()[self._n],"__contains__",self.__contains__)
-        self._t=Process(target=_taskManager,args=(self._q,self._d,self._f,self._n, self._e))
+        self._t=Process(target=_taskManager,args=(self._q,self._d,self._f,self._n, self._e)) 
+        self._t.daemon=True
         self._t.start()
     def apply_async(self,*item):
         """Calling this method starts up a new process of the function call in question.
