@@ -12,6 +12,8 @@ from multiprocessing import Queue
 from multiprocessing import Process
 from multiprocessing import Manager
 
+class _EndProcess():
+    pass
 class _StillWaiting():
     pass
 def _parallelRun(a_queue,a_dict,a_func_marshal,a_func_name,a_task, an_event):
@@ -48,10 +50,13 @@ def _getValue(a_dict,a_queue,an_event,wait,func,*item):
             a_queue.put(item)
 def _taskManager(a_queue,a_dict,a_func_marshal,a_func_name,an_event):
     '''The method the asynchronous.Cache runs to maintain exoprocess control of the cache.'''
-    while True:
+    a_task = None
+    while a_task is not (_EndProcess,):
         a_task=a_queue.get()
-        if a_task is not None:
-            Process(target=_parallelRun,args=(a_queue,a_dict,a_func_marshal,a_func_name,a_task,an_event)).start()
+        if a_task is not (_EndProcess,) and a_task is not None:
+            newThread = Process(target=_parallelRun,args=(a_queue,a_dict,a_func_marshal,a_func_name,a_task,an_event))
+            newThread.daemon = True
+            newThread.start()
 class Cache():
     '''An asynchronous cache implementation. Maintains multiple recursive calls stably.
 
@@ -142,8 +147,7 @@ class Cache():
         globals()[self._n]=partial(_getValue,self._d,self._q,self._e,True,self.func)
         globals()[self._n].apply_async=partial(_getValue,self._d,self._q,self._e,False,self.func)
         #setattr(globals()[self._n],"__contains__",self.__contains__)
-        self._t=Process(target=_taskManager,args=(self._q,self._d,self._f,self._n, self._e)) 
-        self._t.daemon=True
+        self._t=Process(target=_taskManager,args=(self._q,self._d,self._f,self._n, self._e))
         self._t.start()
     def apply_async(self,*item):
         """Calling this method starts up a new process of the function call in question.
@@ -152,7 +156,11 @@ class Cache():
     def __call__(self,*item):
         return _getValue(self._d,self._q,self._e,True,self.func,*item)
     def __del__(self):
+        self._q.put(_EndProcess)
+        self._q.close()
         self._t.terminate()
+        self._t.join()
+        self._m.shutdown()
     def __repr__(self):
         return 'concurrent.Cache('+self.func.__repr__()+')'
     #def __contains__(self,item):

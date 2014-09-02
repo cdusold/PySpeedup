@@ -8,5 +8,5 @@ structure of the Python :mod:`multiprocessing` for common and simple uses
 of parallelization.
 
 """
-from _buffer import buffer,Buffer
-from _cache import Cache
+from pyspeedup.concurrent._buffer import buffer,Buffer
+from pyspeedup.concurrent._cache import Cache
