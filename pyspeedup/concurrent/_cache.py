@@ -11,6 +11,7 @@ from functools import partial
 from multiprocessing import Queue
 from multiprocessing import Process
 from multiprocessing import Manager
+import atexit
 
 class _EndProcess():
     pass
@@ -149,6 +150,7 @@ class Cache():
         #setattr(globals()[self._n],"__contains__",self.__contains__)
         self._t=Process(target=_taskManager,args=(self._q,self._d,self._f,self._n, self._e))
         self._t.start()
+        atexit.register(self._t.terminate)
     def apply_async(self,*item):
         """Calling this method starts up a new process of the function call in question.
         """
