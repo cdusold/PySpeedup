@@ -10,14 +10,14 @@ def read(fname):
 
 setup(
     name = "PySpeedup",
-    version = "0.1.0.2",
+    version = "0.1.0.3",
     author = "Chris Dusold",
     author_email = "PySpeedup@ChrisDusold.com",
     description = ("A multiprocess framework for efficient calculations."),
     license = read("LICENSE"),
     keywords = "algorithmic speedup framework",
     url = "http://pyspeedup.rtfd.org/",
-    packages=['pyspeedup', 'pyspeedup.concurrent', 'pyspeedup.algorithms', 'tests'],
+    packages=['pyspeedup', 'pyspeedup.concurrent', 'pyspeedup.algorithms', 'pyspeedup.memory', 'tests'],
     long_description=read('README.rst'),
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
