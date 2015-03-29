@@ -77,3 +77,8 @@ Disk Based Dictionary
 ---------------------
 
 .. autoclass:: pyspeedup.memory.DiskDict
+
+Disk Based List
+---------------
+
+.. autoclass:: pyspeedup.memory.DiskList

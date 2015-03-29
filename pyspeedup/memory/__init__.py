@@ -10,3 +10,4 @@ big data centric solutions.
 
 """
 from pyspeedup.memory._diskdict import DiskDict
+from pyspeedup.memory._diskdict import DiskList
