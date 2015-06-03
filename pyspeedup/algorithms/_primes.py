@@ -91,5 +91,6 @@ def findCertificateOfPrimitivity(p):
     b=[1]
     while 1 in b:
         i+=1
-        a,b=certificateOfPrimitivity(i,5881)
+        a,b=certificateOfPrimitivity(i,p)
     return a,b
+    

@@ -13,6 +13,13 @@ from multiprocessing import Process
 from multiprocessing import Manager
 import atexit
 
+def _closeProcessGracefully(instance):
+    if instance is not None:
+        instance._q.put(_EndProcess)
+        instance._q.close()
+        instance._t.terminate()
+        instance._t.join()
+        instance._m.shutdown()
 class _EndProcess():
     pass
 class _StillWaiting():
@@ -91,8 +98,8 @@ class Cache():
         ...     fibonacci.apply_async(n-2)
         ...     return fibonacci(n-1)+fibonacci(n-2)
         ...
-        >>> fibonacci(5)
-        8
+        >>> fibonacci(100)
+        573147844013817084101L
 
     .. note:: Be careful when picking how to call your functions if you are looking
               for speed. Given that the fibonacci sequence is roughly linear in
@@ -150,7 +157,7 @@ class Cache():
         #setattr(globals()[self._n],"__contains__",self.__contains__)
         self._t=Process(target=_taskManager,args=(self._q,self._d,self._f,self._n, self._e))
         self._t.start()
-        atexit.register(self._t.terminate)
+        atexit.register(_closeProcessGracefully, self) #TODO: Make this line not necessary.
     def apply_async(self,*item):
         """Calling this method starts up a new process of the function call in question.
         """
@@ -158,11 +165,7 @@ class Cache():
     def __call__(self,*item):
         return _getValue(self._d,self._q,self._e,True,self.func,*item)
     def __del__(self):
-        self._q.put(_EndProcess)
-        self._q.close()
-        self._t.terminate()
-        self._t.join()
-        self._m.shutdown()
+        _closeProcessGracefully(self)
     def __repr__(self):
         return 'concurrent.Cache('+self.func.__repr__()+')'
     #def __contains__(self,item):

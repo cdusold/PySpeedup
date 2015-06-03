@@ -15,8 +15,8 @@ def _exitgracefully(self):
         for key in self.pages.keys():
             self._save_page_to_disk(key)
 class _page(dict):
-    currentDepth=0
-class DiskDict(MutableMapping):
+    pass
+class OrderedDiskDict(MutableMapping):
     """
     A dictionary class that maintains O(1) look up and write while keeping RAM usage O(1) as well.
 
@@ -44,7 +44,7 @@ class DiskDict(MutableMapping):
         self.max_pages = max_pages
         try:
             with open(self._file_base+'Len', 'rb') as f:
-                self.pages.currentDepth,self._length = cPickle.load(f)
+                self._length = cPickle.load(f)
             self._total.remove(0)
             self._queue=[]
             del self.pages[0]
@@ -70,7 +70,6 @@ class DiskDict(MutableMapping):
             if k not in self.pages:
                 self.pages[k]=_page()
                 self._total.add(k)
-                self.pages[k].currentDepth=self.pages.currentDepth
                 self._queue.append(k)
         while len(self._queue)>self.max_pages:
             if self._queue[0] == k:
@@ -78,18 +77,7 @@ class DiskDict(MutableMapping):
                 del self._queue[0]
             self._save_page_to_disk(self._queue[0])
     def _branchpage(self,pagenumber):
-        self._guarantee_page(pagenumber)
-        if self.pages[pagenumber].currentDepth == self.pages.currentDepth:
-            return
-        self.pages[pagenumber].currentDepth = self.pages.currentDepth
-        for key in set(self.pages[pagenumber].keys()):
-            k = hash(key)&self.pages.currentDepth
-            if k != pagenumber:
-                self._guarantee_page(pagenumber)
-                v = self.pages[pagenumber][key]
-                del self.pages[pagenumber][key]
-                self._guarantee_page(k)
-                self.pages[k][key]=v
+        pass
     def _finditem(self,key):
         """
         Pulls up the page containing the key in question.
@@ -102,11 +90,7 @@ class DiskDict(MutableMapping):
         time refactor O(n) and usual refactor approximately
         O(n/ ln(n)). Average case lookup O(n/k).
         """
-        k=hash(key)&self.pages.currentDepth
-        i = 0
-        while (k&(self.pages.currentDepth>>i)) not in self._total|set([0]):
-            i+=1
-        self._branchpage(k&(self.pages.currentDepth>>i))
+        k=hash(key)//self.size_limit
         self._guarantee_page(k)
         return k,key
     def _iterpages(self):
@@ -149,11 +133,6 @@ class DiskDict(MutableMapping):
         if k not in self.pages[i]:
             self._length+=1
         self.pages[i][k]=value
-        if len(self.pages[i]) > self.size_limit:
-            if self.pages[i].currentDepth == self.pages.currentDepth:
-                self.pages.currentDepth <<= 1
-                self.pages.currentDepth  |= 1
-            self._branchpage(i)
     def __del__(self):
         '''
         Save all the values to disk before closing.
@@ -166,7 +145,7 @@ class DiskDict(MutableMapping):
     def _save_page_to_disk(self,number):
         import cPickle
         with open(self._file_base+'Len', 'wb') as f:
-            cPickle.dump((self.pages.currentDepth,self._length),f)
+            cPickle.dump(self._length,f)
         if self._file_base:
             if number in self.pages:
                 if len(self.pages[number])>0:

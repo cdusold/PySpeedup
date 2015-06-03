@@ -191,5 +191,5 @@ def add(D,x,s):                          # make no multiple keys in Dict
     D[x] = s   
 
 if __name__=='__main__':
-    #freeze_support()
+    freeze_support()
     ut.main()

@@ -80,7 +80,8 @@ class Buffer():
     .. note:: As of yet all values are stored in a list on the backend.
               There is no memory management built in to this version, but
               is planned to be integrated soon. Be careful not to accidentally
-              cache too many or too large of values, as they many
+              cache too many or too large of values, as you may use up all of
+              your RAM and slow down computation immensely.
     """
     def __init__(self,generator,buffersize=16,haltCondition=None):
         for n in list(n for n in set(dir(generator)) - set(dir(self)) if n != '__class__'):

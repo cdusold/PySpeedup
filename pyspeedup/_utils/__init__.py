@@ -1,1 +1,1 @@
-from _timer import Timer
+from pyspeedup._utils._timer import Timer

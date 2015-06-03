@@ -10,4 +10,5 @@ big data centric solutions.
 
 """
 from pyspeedup.memory._diskdict import DiskDict
-from pyspeedup.memory._diskdict import DiskList
+from pyspeedup.memory._disklist import DiskList
+from pyspeedup.memory._ordereddiskdict import OrderedDiskDict
