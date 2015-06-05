@@ -104,7 +104,7 @@ class Cache():
     .. note:: Be careful when picking how to call your functions if you are looking
               for speed. Given that the fibonacci sequence is roughly linear in
               dependencies with caching, there isn't a significant speedup. When in
-              doubt, :mod:`cProfile` (or :mod:`profile`) are you friends.
+              doubt, :mod:`cProfile` (or :mod:`profile`) are your friends.
 
     .. todo:: Eventually provide automatic profiling to help with this part.
 

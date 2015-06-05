@@ -9,7 +9,7 @@ import cPickle
 from os.path import join
 from threading import Thread
 import atexit
-from pyspeedup.memory import OrderedDiskDict #Add OrderedDiskDict to speed up this.
+from pyspeedup.memory import OrderedDiskDict, DiskDict
 
 D = {}
 F = {}
@@ -32,7 +32,7 @@ def load_primes(location):
     global p
     global file_location
     stop_seive()
-    D = OrderedDiskDict() #New seive object.
+    D = DiskDict() #New seive object.
     D.link_to_disk("seive",file_location=location, size_limit = 65536, max_pages = 32) #Load or create persistance.
     F = OrderedDiskDict() #A new factor list object.
     F.link_to_disk("factors",file_location=location, size_limit = 65536, max_pages = 32) #Load or create persistance.
@@ -119,7 +119,19 @@ def factor(N):
     tell us that N is prime, return N.
 
     This function ignores any algorithms that return "probably prime."
-    """ #TODO: Make sure to add the entry to F
+    """
+    global F
+    if N in F:
+        return F[N]
+    if N<-1:
+        return [-1,N]
+    if N<3:
+        return N
+    #TODO: Replace with multiprocess structure, starting with trial division.
+    #TODO: Add BailliePSW and/or one of its submethods after trial division.
+    found = fermat_factorization(N)
+    F[N] = found
+    return found
 
 def fermat_factorization(N):
     """
@@ -128,18 +140,13 @@ def fermat_factorization(N):
 
     Reference: http://en.wikipedia.org/wiki/Fermat's_factorization_method
     """
-    global F
-    if N in F:
-        return F[N]
     import math
-    if N<0:
+    if N<-1:
         return [-1,N]
     if N<3:
-        F[N] = N
-        return F[N]
+        return N
     if N%2==0:
-        F[N] = [2,N//2]
-        return F[N]
+        return [2,N//2]
     a = math.ceil(math.sqrt(N))
     b2 = a*a - N
     b=math.floor(math.sqrt(b2))
@@ -148,10 +155,8 @@ def fermat_factorization(N):
         a += 1 #                           b2 = a*a - N
         b=math.floor(math.sqrt(b2)) #TODO, only do on success.
     if a-b==1:
-        F[N] = N
         return N
-    F[N] = [a-b,a+b]
-    return F[N]
+    return [a-b,a+b]
 
 def is_prime(N):
     """
@@ -163,7 +168,7 @@ def is_prime(N):
         return False
     if N in F:
         return F[N]==N
-    return fermat_factorization(N)==N
+    return factor(N)==N
 
 #TODO: cached or not?
 def get_factorization(q):
@@ -177,7 +182,7 @@ def get_factorization(q):
     if q in F:
         t = F[q]
     else:
-        t = fermat_factorization(q)
+        t = factor(q)
     if t != q:
         m = []
         for i in t:
