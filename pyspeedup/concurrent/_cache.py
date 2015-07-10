@@ -126,6 +126,26 @@ class Cache():
     first call, yielding to `n` processes being spawned and using system resources.
     Simply caching the naive Fibonacci function is just about the fastest way to use it.
 
+    To avoid unnecessary branching automatically, you can use the batch_async method
+    similarly to the apply_async method, except each set of arguments, even if they're
+    singular, must be wrapped in a tuple. Applying this to the Fibonacci function yields.
+
+        >>> @Cache
+        ... def fibonacci(n):
+        ...     if n < 2: # Not bothering with input value checking here.
+        ...         return 1
+        ...     fibonacci.batch_async((n-1,),(n-2,))
+        ...     return fibonacci(n-1)+fibonacci(n-2)
+        ...
+        >>> fibonacci(100) #Todo, update to 200 and add that correct answer here.
+        573147844013817084101L
+
+    This makes the branching optimal whenever possible. Race conditions might cause
+    issues, but those caused by python's built in Manager cannot be mitigated easily.
+    For the fibonnacci sequence, this will likely just revert the computation to a
+    mostly synchronous and sequential calculation, which is optimal for this version
+    of calculating the Fibonacci sequence.
+
     .. note:: There are `much better algorithms
               <http://en.wikipedia.org/wiki/Fibonacci_sequence#Matrix_form>`_ for
               calculating Fibonacci sequence elements; some of which are better suited
