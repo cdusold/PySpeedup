@@ -30,6 +30,7 @@ def _parallelRun(a_queue,a_dict,a_func_marshal,a_func_name,a_task, an_event):
         a_func=FunctionType(loads(a_func_marshal),globals(),"a_func")
         globals()[a_func_name]=partial(_getValue,a_dict,a_queue,an_event,True,a_func)
         globals()[a_func_name].apply_async=partial(_getValue,a_dict,a_queue,an_event,False,a_func)
+        globals()[a_func_name].batch_async=partial(_batchAsync,a_dict,a_queue,a_func)
         #setattr(globals()[a_func_name],"__contains__",a_dict.__contains__)
         a_result=a_func(*a_task)
         a_dict[a_task]=a_result
@@ -56,6 +57,12 @@ def _getValue(a_dict,a_queue,an_event,wait,func,*item):
             return a_dict[item]
         else:
             a_queue.put(item)
+def _batchAsync(a_dict,a_queue,func,*items):
+    '''This smartly decides how to branch asynchronously and does so synchronously if only one item is missing.'''
+    items = [item for item in items if item not in a_dict]
+    if len(items)>1:
+        for item in items:
+            a_queue.put(item)
 def _taskManager(a_queue,a_dict,a_func_marshal,a_func_name,an_event):
     '''The method the asynchronous.Cache runs to maintain exoprocess control of the cache.'''
     a_task = None
@@ -66,7 +73,8 @@ def _taskManager(a_queue,a_dict,a_func_marshal,a_func_name,an_event):
             newThread.daemon = True
             newThread.start()
 class Cache():
-    '''An asynchronous cache implementation. Maintains multiple recursive calls stably.
+    '''
+    An asynchronous cache implementation. Maintains multiple recursive calls stably.
 
     The resultant object operates just like a function, but runs the code outside
     the main process. When calls are started with :meth:`~Cache.apply_async`, a new process
@@ -159,9 +167,20 @@ class Cache():
         self._t.start()
         atexit.register(_closeProcessGracefully, self) #TODO: Make this line not necessary.
     def apply_async(self,*item):
-        """Calling this method starts up a new process of the function call in question.
+        """
+        Calling this method starts up a new process of the function call in question.
+        This does not retrieve an answer.
         """
         return _getValue(self._d,self._q,self._e,False,self.func,*item)
+    def batch_async(self,*items):
+        """
+        This method examines the arguments passed in for how to branch optimally
+        then does so. This does not retrieve the answers, just like apply_async does not.
+        The arguments must each be a complete set of the arguments passed into the function
+        but in tuple form. If the cached function only takes one argument, wrap it with
+        parenthesis and add a comma before the closing parenthesis.
+        """
+        _batchAsync(self._d,self._q,self.func,*items)
     def __call__(self,*item):
         return _getValue(self._d,self._q,self._e,True,self.func,*item)
     def __del__(self):

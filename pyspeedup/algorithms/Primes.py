@@ -128,9 +128,11 @@ def factor(N):
     if N in F:
         return F[N]
     if N<-1:
-        return [-1,N]
+        return [-1,abs(N)]
     if N<3:
         return N
+    if N%2==0: #This reduces the factorization diskdict significantly, and gets half of all values.
+        return [2,N//2]
     #TODO: Replace with multiprocess structure, starting with trial division.
     #TODO: Add BailliePSW and/or one of its submethods after trial division.
     found = fermat_factorization(N)

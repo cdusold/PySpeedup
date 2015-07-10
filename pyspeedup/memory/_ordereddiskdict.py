@@ -66,7 +66,7 @@ class OrderedDiskDict(MutableMapping):
                 if k in self._total:
                     self._load_page_from_disk(k)
             except:
-                pass
+                print("WARNING: page " + str(k) + " claims to be on disk, but failed to load. Creating a blank page now.")
             if k not in self.pages:
                 self.pages[k]=_page()
                 self._total.add(k)
