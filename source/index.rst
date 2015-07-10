@@ -33,6 +33,8 @@ Concurrent Buffer
 
 .. autoclass:: pyspeedup.concurrent.Buffer
 .. autofunction:: pyspeedup.concurrent.buffer
+.. autofunction:: pyspeedup.concurrent.uniformlyNonDecreasing
+.. autofunction:: pyspeedup.concurrent.absolutelyNonDecreasing
 
 Concurrent Cache
 ----------------
@@ -70,7 +72,7 @@ Algorithm Module
 Memory Module
 =============
 
-.. autoclass:: pyspeedup.memory
+.. automodule:: pyspeedup.memory
    :members: __init__
 
 Disk Based Dictionary

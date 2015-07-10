@@ -8,11 +8,12 @@ speed up the whole process.
 import cPickle
 from os.path import join
 from threading import Thread
+from time import sleep
 import atexit
 from pyspeedup.memory import OrderedDiskDict, DiskDict
 
-D = {}
-F = {}
+D = DiskDict()
+F = OrderedDiskDict()
 c = 3
 p = 3
 q = 9
@@ -32,8 +33,10 @@ def load_primes(location):
     global p
     global file_location
     stop_seive()
+    del D
     D = DiskDict() #New seive object.
     D.link_to_disk("seive",file_location=location, size_limit = 65536, max_pages = 32) #Load or create persistance.
+    del F
     F = OrderedDiskDict() #A new factor list object.
     F.link_to_disk("factors",file_location=location, size_limit = 65536, max_pages = 32) #Load or create persistance.
     try:
@@ -94,6 +97,7 @@ def _prime_seive():
             while x in D: x += s #Make it unique.
             D[x] = p1 #And put it back in the seive.
         c += 2 #We skip all even numbers since 2 is hard coded.
+        sleep(0)
     with open(D._file_base+"current",'wb') as f:
         cPickle.dump((c,p), f)
 
@@ -164,6 +168,7 @@ def is_prime(N):
     whether N is prime (in O(1)) or Fermat's
     factorization method to figure it out (in O(n)).
     """
+    global F
     if N < 2:
         return False
     if N in F:
@@ -178,6 +183,7 @@ def get_factorization(q):
     after tree balancing) or by running Fermat's
     factorization method (in O(n ln(n))).
     """
+    global F
     t=[]
     if q in F:
         t = F[q]
@@ -194,9 +200,10 @@ def get_factorization(q):
 
 if __name__ == "__main__":
     from os.path import expanduser
-    load_primes(join(expanduser("~"),".pyspeedup"))
+    load_primes("D:/.pyspeedup")
     start_seive()
-    while len(F)<1000000: pass
+    while len(F)<1000000: 
+        sleep(1)
     stop_seive()
     print(c)
     print(p)

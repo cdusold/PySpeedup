@@ -158,7 +158,7 @@ class DiskDict(MutableMapping):
         '''
         Save all the values to disk before closing.
         '''
-        if self is None or not hasattr(self,"_save_page_to_disk"):
+        if self is None or not hasattr(self,"_save_page_to_disk") or self._file_base is None:
             return
         while len(self.pages)>0:
             for key in self.pages.keys():

@@ -28,14 +28,30 @@ def _run(a_queue,a_gen_marshal,a_gen_name,a_list,an_event):
             a_queue.put(each_value)
     except Exception as e:
         print("Dunno what to tell you bud: {}".format(str(e)))
+def uniformlyNonDecreasing(buffer,item,attempts):
+    """
+    Stops after the buffer has seen a value larger than the one being searched for.
+    The default halting condition for the Buffer class.
+    """
+    if self._cache[-1]>item:
+        return True
+    return False
+def absolutelyNonDecreasing(buffer,item,attempts):
+    """
+    Stops after the buffer has seen an absolute value larger than the one being searched for.
+    The example halting condition given in the documentation.
+    """
+    if abs(self._cache[-1])>abs(item):
+        return True
+    return False
 class Buffer():
     """
     An implementation of a concurrent buffer that runs a generator in a
     separate processor.
 
-    .. note:: The current implementation requires the values be uniformly
-              increasing (like the primes, or positive fibonnaci sequence).
-              The halting condition is currently once the value reached is
+    .. note:: The default halting condition requires the values be uniformly
+              non decreasing (like the primes, or positive fibonnaci sequence).
+              This halting condition is currently once the value reached is
               greater than or equal to the one being searched for.
 
     The resultant buffered object can be referenced as a list or an iterable.
@@ -77,13 +93,46 @@ class Buffer():
 
     The sequence generated is cached, so the output stored will be static.
 
+    To create your own halting condition, you need to provide a function with
+    the first argument taken in as the buffer object, the second argument for
+    the item that we're deciding whether we've passed (or given up on) during
+    the search, and the third argument being how many times we've checked the
+    halting condition during this search.
+
+    For example, if your buffered sequence isn't uniformly non decreasing, but
+    is instead absolutely non decreasing, you could create the following halting
+    condition function:
+
+        >>> def absolutelyNonDecreasing(buffer, item, attempts):
+        ...     if abs(self._cache[-1])>abs(item):
+        ...         return True
+        ...     return False
+        ...
+        >>> @buffer(haltCondition = absolutelyNonDecreasing)
+        ... def complexSpiral():
+        ...     i = 1
+        ...     while True:
+        ...         yield i
+        ...         i *= 1.1j
+        ...
+        >>> complexSpiral[1]
+        1.1j
+        >>> -1.21 in complexSpiral
+        True
+
+    Be careful in creating your halting condition, as if it is false for the
+    sequence you are buffering, you may not see expected results, or you may
+    find your program in an infinite loop. Be sure to consider asymptotes
+    and other possibilities in your results. It may not be a bad idea to
+    have it bail out after a certain number of attempts.
+
     .. note:: As of yet all values are stored in a list on the backend.
               There is no memory management built in to this version, but
               is planned to be integrated soon. Be careful not to accidentally
               cache too many or too large of values, as you may use up all of
               your RAM and slow down computation immensely.
     """
-    def __init__(self,generator,buffersize=16,haltCondition=None):
+    def __init__(self,generator,buffersize=16,haltCondition=uniformlyNonDecreasing):
         for n in list(n for n in set(dir(generator)) - set(dir(self)) if n != '__class__'):
             setattr(self, n, getattr(generator, n))
         setattr(self, "__doc__", getattr(generator, "__doc__"))
@@ -93,7 +142,7 @@ class Buffer():
         self._g=dumps(generator.__code__)
         self._n=generator.__name__
         self._cache=self._m.list()
-        #self.set_halt_condition(haltCondition) #This will make non-uniformly increasing generators usable without introducing a halting problem in the code (just in the userspace).
+        self.set_halt_condition(haltCondition) #This will make non-uniformly increasing generators usable without introducing a halting problem in the code (just in the userspace).
         self._q=Queue(self._buffersize)
         self._thread=Process(target=_run,args=(self._q,self._g,self._n,self._cache,self._e))
         self._thread.daemon=True
@@ -116,17 +165,21 @@ class Buffer():
                 self.pull_values()
         raise Exception("Deadlocked...")
     def __contains__(self,item):
+        attempts = 0
+        prevCount = 0
+        while haltCondition(self,item,attempts):
+            currentCount=len(self._cache)
+            if currentCount == prevCount:
+                currentCount += 1
+                self[prevCount]
+            if item in self._cache[prevCount:currentCount]:
+                return True 
+            prevCount = currentCount
+            attempts += 1
         currentCount=len(self._cache)
-        if item in self._cache[:currentCount]:
+        if item in self._cache[prevCount:currentCount]:
             return True 
-        else:
-            if self._cache[currentCount]>item:
-                return False
-            else:
-                currentCount+=1
-                while self[currentCount]<item:
-                    currentCount+=1
-                return self[currentCount]==item
+        return False
     def __getitem__(self,key):
         cache_len=len(self._cache)
         if key+self._buffersize>cache_len:
@@ -160,7 +213,7 @@ class Buffer():
             pass
     def __repr__(self):
         return 'concurrent._Buffer('+self.func.__repr__()+','+str(self._buffersize)+',None)'
-def buffer(buffersize=16,haltCondition=None):
+def buffer(buffersize=16,haltCondition=uniformlyNonDecreasing):
     '''A decorator to create a concurrently buffered generator.
 
     Used with ``@buffer([buffersize,[haltCondition]])`` as described in :class:`~pyspeedup.concurrent.Buffer`'s documentation.
