@@ -62,6 +62,7 @@ def _batchAsync(a_dict,a_queue,func,*items):
     items = [item for item in items if item not in a_dict]
     if len(items)>1:
         for item in items:
+            a_dict[item]=_StillWaiting
             a_queue.put(item)
 def _taskManager(a_queue,a_dict,a_func_marshal,a_func_name,an_event):
     '''The method the asynchronous.Cache runs to maintain exoprocess control of the cache.'''
@@ -137,8 +138,8 @@ class Cache():
         ...     fibonacci.batch_async((n-1,),(n-2,))
         ...     return fibonacci(n-1)+fibonacci(n-2)
         ...
-        >>> fibonacci(100) #Todo, update to 200 and add that correct answer here.
-        573147844013817084101L
+        >>> fibonacci(200)
+        453973694165307953197296969697410619233826L
 
     This makes the branching optimal whenever possible. Race conditions might cause
     issues, but those caused by python's built in Manager cannot be mitigated easily.
@@ -182,6 +183,7 @@ class Cache():
         self.func=FunctionType(loads(self._f),globals(),"a_func")
         globals()[self._n]=partial(_getValue,self._d,self._q,self._e,True,self.func)
         globals()[self._n].apply_async=partial(_getValue,self._d,self._q,self._e,False,self.func)
+        globals()[self._n].batch_async=partial(_batchAsync,self._d,self._q,self.func)
         #setattr(globals()[self._n],"__contains__",self.__contains__)
         self._t=Process(target=_taskManager,args=(self._q,self._d,self._f,self._n, self._e))
         self._t.start()
