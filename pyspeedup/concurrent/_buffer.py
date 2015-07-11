@@ -142,7 +142,7 @@ class Buffer():
         self._g=dumps(generator.__code__)
         self._n=generator.__name__
         self._cache=self._m.list()
-        self.set_halt_condition(haltCondition) #This will make non-uniformly increasing generators usable without introducing a halting problem in the code (just in the userspace).
+        self.haltCondition = haltCondition #This will make non-uniformly increasing generators usable without introducing a halting problem in the code (just in the userspace).
         self._q=Queue(self._buffersize)
         self._thread=Process(target=_run,args=(self._q,self._g,self._n,self._cache,self._e))
         self._thread.daemon=True
@@ -167,7 +167,7 @@ class Buffer():
     def __contains__(self,item):
         attempts = 0
         prevCount = 0
-        while haltCondition(self,item,attempts):
+        while self.haltCondition(self,item,attempts):
             currentCount=len(self._cache)
             if currentCount == prevCount:
                 currentCount += 1
