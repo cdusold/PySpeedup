@@ -12,13 +12,21 @@ from time import sleep
 import atexit
 from pyspeedup.memory import OrderedDiskDict, DiskDict
 
-D = DiskDict()
-F = OrderedDiskDict()
-c = 3
-p = 3
-q = 9
-thread = None
-file_location = None
+if not "D" in globals():
+    global D
+    global F
+    global c
+    global p
+    global q
+    global thread
+    global file_location
+    D = DiskDict()
+    F = OrderedDiskDict()
+    c = 3
+    p = 3
+    q = 9
+    thread = None
+    file_location = None
 
 def load_primes(location):
     """

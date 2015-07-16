@@ -6,6 +6,25 @@ def FermatPrimeTest(n,t=2):
     '''Tests for primitivity using Fermat's Primitivity Test. Does not guarantee primitivity.'''
     return pow(t,n-1,n)==1
 
+def FermatConsecutivePrimality(n):
+    if not FermatPrimeTest(n,2):
+        return False
+    if n < 341: #This is the first pseudoprime common to all previous bases. (2)
+        return True
+    if not FermatPrimeTest(n,3):
+        return False
+    if n < 1105: #"" First pseudoprime common to bases 2,3
+        return True
+    if not FermatPrimeTest(n,5):
+        return False
+    if n < 1729: #"" First pseudoprime common to bases 2,3,5
+        return True
+    if not FermatPrimeTest(n,7):
+        return False
+    if n < 29341: # I don't actually know this limit. OEIS is short.
+        return True
+    return None
+
 def pollard_p1(N):
     if N<=2:
         return [N]
@@ -58,6 +77,17 @@ def StrongPrimeTest(n,t=2):
             return True
         b=(b*b)%n
     return False
+
+def ConsecutiveStrongPrimeTest(n):
+    if not StrongPrimeTest(n,2):
+        return False
+    if n < 2047:
+        return True
+    if not StrongPrimeTest(n,3):
+        return False
+    if n < 233017: #? May be higher
+        return True
+    return None
 
 def certificateOfPrimitivity(number,modulo):
     '''Generates a set of the distinct prime factors, and their least nonnegative residues of the given number in the given modulo.'''
