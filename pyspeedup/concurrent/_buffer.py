@@ -33,7 +33,7 @@ def uniformlyNonDecreasing(buffer,item,attempts):
     Stops after the buffer has seen a value larger than the one being searched for.
     The default halting condition for the Buffer class.
     """
-    if self._cache[-1]>item:
+    if buffer._cache[-1]>item:
         return True
     return False
 def absolutelyNonDecreasing(buffer,item,attempts):
@@ -41,7 +41,7 @@ def absolutelyNonDecreasing(buffer,item,attempts):
     Stops after the buffer has seen an absolute value larger than the one being searched for.
     The example halting condition given in the documentation.
     """
-    if abs(self._cache[-1])>abs(item):
+    if abs(buffer._cache[-1])>abs(item):
         return True
     return False
 class Buffer():
@@ -51,8 +51,8 @@ class Buffer():
 
     .. note:: The default halting condition requires the values be uniformly
               non decreasing (like the primes, or positive fibonnaci sequence).
-              This halting condition is currently once the value reached is
-              greater than or equal to the one being searched for.
+              This halting condition currently stops the search once the value
+              reached is greater than or equal to the one being searched for.
 
     The resultant buffered object can be referenced as a list or an iterable.
     The easiest way to use this class is by utlizing the utility function
@@ -104,7 +104,7 @@ class Buffer():
     condition function:
 
         >>> def absolutelyNonDecreasing(buffer, item, attempts):
-        ...     if abs(self._cache[-1])>abs(item):
+        ...     if abs(buffer._cache[-1])>abs(item):
         ...         return True
         ...     return False
         ...

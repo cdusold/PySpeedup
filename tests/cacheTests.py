@@ -63,7 +63,7 @@ class cachedTest(ut.TestCase):
         with Timer() as t1:
             _=self.c(32)
         self.assertGreater(t2.interval,t1.interval,"There isn't a speed up... This is useless then, I suppose.")
-        
+
 
 def fib(a): #Needs to be in the global scope.
     if a in [0,1]:
@@ -73,7 +73,7 @@ def fib(a): #Needs to be in the global scope.
     fib.apply_async(a-1) #Also needs to prepare multiprocessed branching.
     fib.apply_async(a-2)
     return fib(a-1)+fib(a-2)
-        
+
 class CacheTest(ut.TestCase):
     c=None
     def setUp(self):
@@ -141,13 +141,13 @@ class bufferTest(ut.TestCase):
     def test_cache(self):
         for i in range(100):
             self.assertEqual(self.mPrimes[i],self.mPrimes._cache[i],"The value was not cached properly.")
-        
-def postponed_sieve():                   # postponed sieve, by Will Ness      
-    yield 2; yield 3; yield 5; yield 7;  # original code David Eppstein, 
+
+def postponed_sieve():                   # postponed sieve, by Will Ness
+    yield 2; yield 3; yield 5; yield 7;  # original code David Eppstein,
     D = {}                               #            ActiveState Recipe 2002
     ps = (p for p in postponed_sieve())  # a separate Primes Supply:
     p = next(ps) and next(ps)            # (3) a Prime to add to dict
-    q = p*p                              # (9) when its sQuare is 
+    q = p*p                              # (9) when its sQuare is
     c = 9                                # the next Candidate
     while True:
         if c not in D:                   # not a multiple of any prime seen so far:
@@ -162,11 +162,11 @@ def postponed_sieve():                   # postponed sieve, by Will Ness
         c += 2                           # next odd candidate
 
 def concurrent_sieve():                  # postponed sieve, by Will Ness
-    yield 2; yield 3; yield 5; yield 7;  # original code David Eppstein, 
+    yield 2; yield 3; yield 5; yield 7;  # original code David Eppstein,
     D = {}                               #            ActiveState Recipe 2002
     ps = (p for p in concurrent_sieve())  # a separate Primes Supply:
     p = next(ps) and next(ps)            # (3) a Prime to add to dict
-    q = p*p                              # (9) when its sQuare is 
+    q = p*p                              # (9) when its square is
     c = 9                                # the next Candidate
     while True:
         if c not in D:                   # not a multiple of any prime seen so far:
@@ -175,7 +175,7 @@ def concurrent_sieve():                  # postponed sieve, by Will Ness
                 s = 2 * p                #     (9+6,6 : 15,21,27,33,...)
                 x = c + s                # make no multiple keys in Dict
                 while x in D: x += s     # increment by the given step
-                D[x] = s   
+                D[x] = s
                 p=next(ps)               #     (5)
                 q=p*p                    #     (25)
         else:                            # a composite:
@@ -185,10 +185,10 @@ def concurrent_sieve():                  # postponed sieve, by Will Ness
             D[x] = s                     #   next multiple, same step
         c += 2                           # next odd candidate
 concurrent_sieve=buffer()(concurrent_sieve)
-   
+
 def add(D,x,s):                          # make no multiple keys in Dict
     while x in D: x += s                 # increment by the given step
-    D[x] = s   
+    D[x] = s
 
 if __name__=='__main__':
     freeze_support()
