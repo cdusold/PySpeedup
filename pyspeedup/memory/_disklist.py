@@ -52,7 +52,7 @@ class DiskList(MutableSequence):
         3
 
     If there is a way to break list like behavior and you can reproduce it, please
-    report it to [the GitHub issues](https://github.com/cdusold/PySpeedup/issues/).
+    report it to `the GitHub issues <https://github.com/cdusold/PySpeedup/issues/>`_.
 
     .. note:: This class is not thread safe, nor is it process safe. Any multithreaded
               or multiprocessed uses of this class holds no guarantees of accuracy.
