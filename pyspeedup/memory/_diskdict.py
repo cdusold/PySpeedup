@@ -1,5 +1,5 @@
 from collections import MutableMapping
-import cPickle
+import pickle
 from os.path import expanduser,join
 from os import remove,makedirs
 from glob import glob
@@ -12,7 +12,7 @@ def _exitgracefully(self):
     if self is None or not hasattr(self,"_save_page_to_disk"):
         return
     while len(self.pages)>0:
-        for key in self.pages.keys():
+        for key in list(self.pages.keys()):
             self._save_page_to_disk(key)
 class _page(dict):
     currentDepth=0
@@ -22,32 +22,81 @@ class DiskDict(MutableMapping):
 
     This is accomplished through a rudimentary (for now) hashing scheme to page the
     dictionary into parts.
+
+    The object created can be used any way a normal dict would be used, and will
+    clean itself up on python closing. This means saving all the remaining pages
+    to disk. If the file_basename and file_location was used before, it will load
+    the old values back into itself so that the results can be reused.
+
+    There are two ways to initialize this object, as a standard object:
+
+        >>> diskDict = DiskDict("sample")
+        >>> for i in range(10):
+        ...     diskDict[i] = chr(97+i)
+        ...
+        >>> diskDict[3]
+        'd'
+        >>> del diskDict[5]
+        >>> ", ".join(str(x) for x in diskDict.keys())
+        0, 1, 2, 3, 4, 6, 7, 8, 9
+        >>> "b" in diskDict
+        True
+
+    Or through context:
+
+        >>> with DiskDict("test") as d:
+        ...     for i in range(10):
+        ...         d[i] = chr(97+i)
+        ...     print(d[3])
+        3
+
+    If there is a way to break dict like behavior and you can reproduce it, please
+    report it to [the GitHub issues](https://github.com/cdusold/PySpeedup/issues/).
+
+    .. note:: This class is not thread safe, nor is it process safe. Any multithreaded
+              or multiprocessed uses of this class holds no guarantees of accuracy.
+
+    You can configure how this class stores things in a few ways.
+
+    The file_basename parameter allows you to keep multiple different stored objects
+    in the same file_location, which defaults to .PySpeedup in the user's home folder.
+    Using a file_basename of the empty string may cause a small slowdown if more
+    than just this object's files are in the folder. Using a file_location of the
+    empty string will result in files being placed in the environment's current
+    location (i.e. what `os.getcwd()` would return).
+
+    The size_limit parameter determines how many items are kept in each page, and the
+    max_pages parameter determines how many pages can be kept in memory at the same
+    time. If you use smaller items in the dict, increasing either is probably a
+    good idea to get better performance. This setting will only use about 128 MB if
+    standard floats or int32 values. Likely less than 200 MB will ever be in memory,
+    which prevents the RAM from filling up and needing to use swap space. Tuning
+    these values will be project, hardware and usage specific to get the best results.
+    Even with the somewhat low defaults, this will beat out relying on python to
+    use swap space.
     """
-    def __init__(self, *args, **kwargs):
-        self.pages=_page()
-        self.pages[0]=_page(*args, **kwargs)
-        self._length = len(self.pages[0])
-        self._total={0}
-        self._queue=[0]
-        self._file_base = None
-    def link_to_disk(self, file_basename, size_limit = 1024, max_pages = 16, file_location = join(expanduser("~"),"PySpeedup")):
-        if len(self)>0:
-            raise Exception("Linking to disk should happen before any data is written.")
-        if self._file_base:
-            raise Exception("Can't link to two file names or locations at the same time.")
-        try:
-            os.makedirs(file_location)
-        except:
-            pass
-        self._file_base = join(file_location,file_basename)
-        self.size_limit = size_limit
+    def __init__(self, file_basename, size_limit = 1024, max_pages = 16, file_location = join(expanduser("~"),".PySpeedup")):
+        if max_pages < 1:
+            raise ValueError("There must be allowed at least one page in RAM.")
         self.max_pages = max_pages
+        if size_limit < 1:
+            raise ValueError("There must be allowed at least one item per page.")
+        self.size_limit = size_limit
+        if file_location:
+            try:
+                makedirs(file_location)
+            except OSError as e:
+                if e.errno != 17:
+                    raise
+                pass
+        self._file_base = join(file_location,file_basename)
+        self.pages = _page()
+        self._length = 0
+        self._total = set()
+        self._queue = []
         try:
             with open(self._file_base+'Len', 'rb') as f:
-                self.pages.currentDepth,self._length = cPickle.load(f)
-            self._total.remove(0)
-            self._queue=[]
-            del self.pages[0]
+                self.pages.currentDepth,self._length = pickle.load(f)
             for f in glob(self._file_base+'*'):
                 try:
                     self._total.add(int(f[len(self._file_base):]))
@@ -56,7 +105,6 @@ class DiskDict(MutableMapping):
         except:
             pass
         atexit.register(_exitgracefully,self)
-        return self
     def _guarantee_page(self,k):
         """
         Pulls up the page in question.
@@ -164,14 +212,13 @@ class DiskDict(MutableMapping):
             for key in self.pages.keys():
                 self._save_page_to_disk(key)
     def _save_page_to_disk(self,number):
-        import cPickle
         with open(self._file_base+'Len', 'wb') as f:
-            cPickle.dump((self.pages.currentDepth,self._length),f)
+            pickle.dump((self.pages.currentDepth,self._length),f)
         if self._file_base:
             if number in self.pages:
                 if len(self.pages[number])>0:
                     with open(self._file_base+str(number),'wb') as f:
-                        cPickle.dump(self.pages[number],f)
+                        pickle.dump(self.pages[number],f)
                 else:
                     self._total.remove(number)
                 del self.pages[number]
@@ -182,7 +229,7 @@ class DiskDict(MutableMapping):
     def _load_page_from_disk(self,number):
         if self._file_base:
             with open(self._file_base+str(number),'rb') as f:
-                self.pages[number] = cPickle.load(f)
+                self.pages[number] = pickle.load(f)
             self._queue.append(number)
             remove(self._file_base+str(number))
     def __str__(self):
@@ -199,8 +246,7 @@ class DiskDict(MutableMapping):
 
 
 if __name__ == '__main__':
-    d = DiskDict()
-    d.link_to_disk('testDiskDict',2,2)
+    d = DiskDict('testDiskDict',2,2)
     for i in range(16):
         d[i/10.]=i
         print(d.pages)

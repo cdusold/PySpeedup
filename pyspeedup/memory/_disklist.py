@@ -1,7 +1,7 @@
 from collections import MutableSequence
-import cPickle
+import pickle
 from os.path import expanduser,join
-from os import remove
+from os import remove, makedirs
 from glob import glob
 import atexit
 
@@ -12,40 +12,95 @@ def _exitgracefully(self):
     if self is None or not hasattr(self,"_save_page_to_disk"):
         return
     while len(self.pages)>0:
-        for key in self.pages.keys():
+        for key in list(self.pages.keys()):
             self._save_page_to_disk(key)
 class _page(list):
     pass
 class DiskList(MutableSequence):
     """
-    A list class that maintains O(k) look up and write while keeping RAM usage O(1) as well.
+    A list class that maintains O(k) look up and O(1) append while keeping RAM usage O(1) as well.
+    Unfortunately, insert is O(n/k).
+
+    This is accomplished through paging every size_limit consecutive values together
+    behind the scenes.
+
+    The object created can be used any way a normal list would be used, and will
+    clean itself up on python closing. This means saving all the remaining pages
+    to disk. If the file_basename and file_location was used before, it will load
+    the old values back into itself so that the results can be reused.
+
+    There are two ways to initialize this object, as a standard object:
+
+        >>> diskList = DiskList("sample")
+        >>> for i in range(10):
+        ...     diskList.append(i)
+        ...
+        >>> diskList[3]
+        3
+        >>> ", ".join(str(x) for x in diskList)
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9
+        >>> del diskList[5]
+        >>> ", ".join(str(x) for x in diskList)
+        0, 1, 2, 3, 4, 6, 7, 8, 9
+
+    Or through context:
+
+        >>> with DiskList("test") as d:
+        ...     for i in range(10):
+        ...         d.append(i)
+        ...     print(d[3])
+        3
+
+    If there is a way to break list like behavior and you can reproduce it, please
+    report it to [the GitHub issues](https://github.com/cdusold/PySpeedup/issues/).
+
+    .. note:: This class is not thread safe, nor is it process safe. Any multithreaded
+              or multiprocessed uses of this class holds no guarantees of accuracy.
+
+    You can configure how this class stores things in a few ways.
+
+    The file_basename parameter allows you to keep multiple different stored objects
+    in the same file_location, which defaults to .PySpeedup in the user's home folder.
+    Using a file_basename of the empty string may cause a small slowdown if more
+    than just this object's files are in the folder. Using a file_location of the
+    empty string will result in files being placed in the environment's current
+    location (i.e. what `os.getcwd()` would return).
+
+    The size_limit parameter determines how many items are kept in each page, and the
+    max_pages parameter determines how many pages can be kept in memory at the same
+    time. If you use smaller items in the list, increasing either is probably a
+    good idea to get better performance. This setting will only use about 64 MB if
+    standard floats or int32 values. Likely less than 200 MB will ever be in memory,
+    which prevents the RAM from filling up and needing to use swap space. Tuning
+    these values will be project, hardware and usage specific to get the best results.
+    Even with the somewhat low defaults, this will beat out relying on python to
+    use swap space.
     """
-    def __init__(self, *args, **kwargs):
-        self.pages=dict()
-        self.pages[0]=_page()
-        self._length = len(self.pages[0])
-        self._number_of_pages=1
-        self._queue=[0]
-        self._file_base = None
-        for i in list(*args, **kwargs):
-            self.append(i)
-    def link_to_disk(self, file_basename, size_limit = 1024, max_pages = 16, file_location = join(expanduser("~"),"PySpeedup")):
-        if len(self)>0:
-            raise Exception("Linking to disk should happen before any data is written.")
-        if self._file_base:
-            raise Exception("Can't link to two file names or locations at the same time.")
-        self._file_base = join(file_location,file_basename)
-        self._size_limit = size_limit
+    def __init__(self, file_basename, size_limit = 1024, max_pages = 16, file_location = join(expanduser("~"),".PySpeedup")):
+        if max_pages < 1:
+            raise ValueError("There must be allowed at least one page in RAM.")
         self.max_pages = max_pages
+        if size_limit < 1:
+            raise ValueError("There must be allowed at least one item per page.")
+        self.size_limit = size_limit
+        if file_location:
+            try:
+                makedirs(file_location)
+            except OSError as e:
+                if e.errno != 17:
+                    raise
+                pass
+        self._file_base = join(file_location,file_basename)
+        self.pages=dict()
+        self._length = 0
+        self._number_of_pages = 0
+        self._queue = []
         try:
             with open(self._file_base+'Len', 'rb') as f:
-                self._number_of_pages,self._length = cPickle.load(f)
-                self._queue=[]
-                del self.pages[0]
+                self._number_of_pages,self._length = pickle.load(f)
         except:
             pass
         atexit.register(_exitgracefully,self)
-        return self
     def _guarantee_page(self,k):
         """
         Pulls up the page in question.
@@ -57,7 +112,8 @@ class DiskList(MutableSequence):
                 raise IndexError("list assignment index out of range")
         while len(self._queue)>self.max_pages:
             if self._queue[0] == k:
-                break
+                self._queue.append(self._queue[0])
+                del self._queue[0]
             self._save_page_to_disk(self._queue[0])
     def _newpage(self):
         self.pages[self._number_of_pages]=[]
@@ -71,7 +127,7 @@ class DiskList(MutableSequence):
             key+=self._length
         if key >= self._length or key < 0:
             raise IndexError("list assignment index out of range")
-        k,i=divmod(key,self._size_limit)
+        k,i=divmod(key,self.size_limit)
         self._guarantee_page(k)
         return k,i
     def _iterpages(self):
@@ -137,14 +193,13 @@ class DiskList(MutableSequence):
             for key in self.pages.keys():
                 self._save_page_to_disk(key)
     def _save_page_to_disk(self,number):
-        import cPickle
         with open(self._file_base+'Len', 'wb') as f:
-            cPickle.dump((self._number_of_pages,self._length),f)
+            pickle.dump((self._number_of_pages,self._length),f)
         if self._file_base:
             if number in self.pages:
                 if len(self.pages[number])>0:
                     with open(self._file_base+str(number),'wb') as f:
-                        cPickle.dump(self.pages[number],f)
+                        pickle.dump(self.pages[number],f)
                 else:
                     self._number_of_pages-=1
                 del self.pages[number]
@@ -154,14 +209,20 @@ class DiskList(MutableSequence):
                     break
     def _load_page_from_disk(self,number):
         if self._file_base:
-            with open(self._file_base+str(number),'rb') as f:
-                self.pages[number] = cPickle.load(f)
+            try:
+                with open(self._file_base+str(number),'rb') as f:
+                    self.pages[number] = pickle.load(f)
+            except IOError as e:
+                if e.errno != 2:
+                    raise
+                raise IOError(2, "Files got corrupted or removed, file " +
+                                  str(number) + " no longer exists.")
             self._queue.append(number)
             remove(self._file_base+str(number))
     def __str__(self):
         return "List with values stored to "+self._file_base
     def __repr__(self):
-        return "DiskList().link_to_disk('',"+str(self._size_limit)+','+str(self.max_pages)+','+self._file_base+')'
+        return "DiskList().link_to_disk('',"+str(self.size_limit)+','+str(self.max_pages)+','+self._file_base+')'
     def __contains__(self, item):
         try:
             i,k = self._finditem(key)
@@ -173,25 +234,25 @@ class DiskList(MutableSequence):
     def __exit__(self, exception_type, exception_val, trace):
         _exitgracefully(self)
     def append(self,v):
-        k = self._length//self._size_limit
+        k = self._length//self.size_limit
         if k == self._number_of_pages:
             self._newpage()
         self._guarantee_page(k)
         self.pages[k].append(v)
         self._length+=1
     def insert(self,i,v):
-        k,i = divmod(i,self._size_limit)
+        k,i = divmod(i,self.size_limit)
         if k == self._number_of_pages:
             self._newpage()
         self.pages[k].insert(i,v)
-        if len(self.pages[k])>self._size_limit:
+        if len(self.pages[k])>self.size_limit:
             for k in range(k,self._number_of_pages-1):
                 self._guarantee_page(i)
                 v = self.pages[i][-1]
                 del self.pages[i][-1]
                 self._guarantee_page(i+1)
                 self.pages[i+1].insert(0,v)
-            if len(self.pages[self._number_of_pages-1])>self._size_limit:
+            if len(self.pages[self._number_of_pages-1])>self.size_limit:
                 self._newpage()
                 self.pages[self._number_of_pages-1].append(self.pages[self._number_of_pages-2][-1])
                 del self.pages[self._number_of_pages-2][-1]
@@ -199,8 +260,7 @@ class DiskList(MutableSequence):
 
 
 if __name__ == '__main__':
-    d = DiskList()
-    d.link_to_disk('testDiskList',2,2)
+    d = DiskList('testDiskList',2,2)
     while len(d):
         d.pop()
     for i in range(16):
