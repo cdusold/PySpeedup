@@ -30,8 +30,10 @@ def _closeProcessGracefully(instance):
         print("test7")
         instance._t.join(10)
         print("test8")
-        instance._m.shutdown()
+        instance._q.join_thread()
         print("test9")
+        instance._m.shutdown()
+        print("test10")
 class _EndProcess():
     pass
 class _StillWaiting():
