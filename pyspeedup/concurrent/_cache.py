@@ -15,7 +15,10 @@ import atexit
 
 def _closeProcessGracefully(instance):
     if instance is not None:
-        instance._q.put(_EndProcess)
+        try:
+            instance._q.put(_EndProcess)
+        except AssertionError:
+            pass
         instance._q.close()
         instance._t.terminate()
         instance._t.join()
