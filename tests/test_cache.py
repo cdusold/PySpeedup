@@ -14,12 +14,12 @@ def uncachedFib(a):
 
 class fibTest(ut.TestCase):
     def test_fib(self):
-        self.assertEqual(uncachedFib(0),0,"The zeroth element of the Fibonnaci sequence is 0, not {}.".format(str(uncachedFib(0))))
-        self.assertEqual(uncachedFib(1),1,"The first element of the Fibonnaci sequence is 1, not {}.".format(str(uncachedFib(1))))
-        self.assertEqual(uncachedFib(2),1,"The second element of the Fibonnaci sequence is 1, not {}.".format(str(uncachedFib(2))))
-        self.assertEqual(uncachedFib(3),2,"The third element of the Fibonnaci sequence is 2, not {}.".format(str(uncachedFib(3))))
-        self.assertEqual(uncachedFib(4),3,"The fourth element of the Fibonnaci sequence is 3, not {}.".format(str(uncachedFib(4))))
-        self.assertEqual(uncachedFib(5),5,"The fifth element of the Fibonnaci sequence is 5, not {}.".format(str(uncachedFib(5))))
+        self.assertEqual(uncachedFib(0),0,"The zeroth element of the Fibonnaci sequence is 0, not {0}.".format(str(uncachedFib(0))))
+        self.assertEqual(uncachedFib(1),1,"The first element of the Fibonnaci sequence is 1, not {0}.".format(str(uncachedFib(1))))
+        self.assertEqual(uncachedFib(2),1,"The second element of the Fibonnaci sequence is 1, not {0}.".format(str(uncachedFib(2))))
+        self.assertEqual(uncachedFib(3),2,"The third element of the Fibonnaci sequence is 2, not {0}.".format(str(uncachedFib(3))))
+        self.assertEqual(uncachedFib(4),3,"The fourth element of the Fibonnaci sequence is 3, not {0}.".format(str(uncachedFib(4))))
+        self.assertEqual(uncachedFib(5),5,"The fifth element of the Fibonnaci sequence is 5, not {0}.".format(str(uncachedFib(5))))
 
 class cachedTest(ut.TestCase):
     c=None
@@ -33,12 +33,12 @@ class cachedTest(ut.TestCase):
             return fib(a-1)+fib(a-2)
         self.c=fib
     def test_fib(self):
-        self.assertEqual(self.c(0),0,"The zeroth element of the Fibonnaci sequence is 0, not {}.".format(str(self.c(0))))
-        self.assertEqual(self.c(1),1,"The first element of the Fibonnaci sequence is 1, not {}.".format(str(self.c(1))))
-        self.assertEqual(self.c(2),1,"The second element of the Fibonnaci sequence is 1, not {}.".format(str(self.c(2))))
-        self.assertEqual(self.c(3),2,"The third element of the Fibonnaci sequence is 2, not {}.".format(str(self.c(3))))
-        self.assertEqual(self.c(4),3,"The fourth element of the Fibonnaci sequence is 3, not {}.".format(str(self.c(4))))
-        self.assertEqual(self.c(5),5,"The fifth element of the Fibonnaci sequence is 5, not {}.".format(str(self.c(5))))
+        self.assertEqual(self.c(0),0,"The zeroth element of the Fibonnaci sequence is 0, not {0}.".format(str(self.c(0))))
+        self.assertEqual(self.c(1),1,"The first element of the Fibonnaci sequence is 1, not {0}.".format(str(self.c(1))))
+        self.assertEqual(self.c(2),1,"The second element of the Fibonnaci sequence is 1, not {0}.".format(str(self.c(2))))
+        self.assertEqual(self.c(3),2,"The third element of the Fibonnaci sequence is 2, not {0}.".format(str(self.c(3))))
+        self.assertEqual(self.c(4),3,"The fourth element of the Fibonnaci sequence is 3, not {0}.".format(str(self.c(4))))
+        self.assertEqual(self.c(5),5,"The fifth element of the Fibonnaci sequence is 5, not {0}.".format(str(self.c(5))))
     def test_init(self):
         self.assertEqual(len(self.c.c),0,"The cache was malformed.")
         self.assertEqual(self.c.n,1,"The cache max size was not recorded properly.")
@@ -80,12 +80,12 @@ class CacheTest(ut.TestCase):
         fib=Cache(globals()['fib'])
         self.c=fib
     def test_fib(self):
-        self.assertEqual(self.c(0),0,"The zeroth element of the Fibonnaci sequence is 0, not {}.".format(str(self.c(0))))
-        self.assertEqual(self.c(1),1,"The first element of the Fibonnaci sequence is 1, not {}.".format(str(self.c(1))))
-        self.assertEqual(self.c(2),1,"The second element of the Fibonnaci sequence is 1, not {}.".format(str(self.c(2))))
-        self.assertEqual(self.c(3),2,"The third element of the Fibonnaci sequence is 2, not {}.".format(str(self.c(3))))
-        self.assertEqual(self.c(4),3,"The fourth element of the Fibonnaci sequence is 3, not {}.".format(str(self.c(4))))
-        self.assertEqual(self.c(5),5,"The fifth element of the Fibonnaci sequence is 5, not {}.".format(str(self.c(5))))
+        self.assertEqual(self.c(0),0,"The zeroth element of the Fibonnaci sequence is 0, not {0}.".format(str(self.c(0))))
+        self.assertEqual(self.c(1),1,"The first element of the Fibonnaci sequence is 1, not {0}.".format(str(self.c(1))))
+        self.assertEqual(self.c(2),1,"The second element of the Fibonnaci sequence is 1, not {0}.".format(str(self.c(2))))
+        self.assertEqual(self.c(3),2,"The third element of the Fibonnaci sequence is 2, not {0}.".format(str(self.c(3))))
+        self.assertEqual(self.c(4),3,"The fourth element of the Fibonnaci sequence is 3, not {0}.".format(str(self.c(4))))
+        self.assertEqual(self.c(5),5,"The fifth element of the Fibonnaci sequence is 5, not {0}.".format(str(self.c(5))))
     def test_cache(self):
         i=self.c(0)
         self.assertEqual(len(self.c._d),1,"The value was not cached properly.")
@@ -101,8 +101,8 @@ class CacheTest(ut.TestCase):
             _=self.c(32)
         self.assertGreater(t2.interval,t1.interval,"There isn't a speed up... This is useless then, I suppose.")
 #     def test_completion(self):
-#         self.assertEqual(_func(7,7,3),17,"_func(7,7,3) is 17 not {}".format(_func(7,7,3)))
-#         self.assertEqual(_func(50,50,3),16475640049,"_func(50,50,3) is 16475640049 not {}".format(_func(50,50,3)))
+#         self.assertEqual(_func(7,7,3),17,"_func(7,7,3) is 17 not {0}".format(_func(7,7,3)))
+#         self.assertEqual(_func(50,50,3),16475640049,"_func(50,50,3) is 16475640049 not {0}".format(_func(50,50,3)))
 
 @Cache
 def _func(size,mx,mn):
@@ -129,15 +129,15 @@ class bufferTest(ut.TestCase):
     def test_primes(self):
         p=[2,3,5,7,11,13,17,19,23,29,31,37,41,43]
         for i in p:
-            self.assertEqual(next(self.primes),i,"The generator skipped {}.".format(i))
+            self.assertEqual(next(self.primes),i,"The generator skipped {0}.".format(i))
     def test_mPrimes(self):
         for i in range(100):
-            self.assertEqual(next(self.primes),self.mPrimes[i],"The buffer skipped prime number {}.".format(i))
+            self.assertEqual(next(self.primes),self.mPrimes[i],"The buffer skipped prime number {0}.".format(i))
     def test_cPrimes(self):
         for i in range(100):
             p=next(self.primes)
-            self.assertEqual(p,self.mPrimes[i],"The buffer skipped prime number {}.".format(i))
-            self.assertEqual(p,next(self.cPrimes),"The buffered generator skipped prime number {}.".format(i))
+            self.assertEqual(p,self.mPrimes[i],"The buffer skipped prime number {0}.".format(i))
+            self.assertEqual(p,next(self.cPrimes),"The buffered generator skipped prime number {0}.".format(i))
     def test_cache(self):
         for i in range(100):
             self.assertEqual(self.mPrimes[i],self.mPrimes._cache[i],"The value was not cached properly.")
