@@ -15,14 +15,23 @@ import atexit
 
 def _closeProcessGracefully(instance):
     if instance is not None:
+        print("test1")
         try:
+            print("test2")
             instance._q.put(_EndProcess)
+            print("test3")
         except AssertionError:
+            print("test4")
             pass
+        print("test5")
         instance._q.close()
+        print("test6")
         instance._t.terminate()
-        instance._t.join()
+        print("test7")
+        instance._t.join(10)
+        print("test8")
         instance._m.shutdown()
+        print("test9")
 class _EndProcess():
     pass
 class _StillWaiting():
