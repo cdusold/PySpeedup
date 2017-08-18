@@ -1,5 +1,8 @@
 from collections import MutableMapping
-import pickle
+try:
+    import cPickle as pickle
+except:
+    import pickle
 from os.path import expanduser,join
 from os import remove,makedirs
 from glob import glob
@@ -235,7 +238,7 @@ class DiskDict(MutableMapping):
     def __str__(self):
         return "Dictionary with values stored to "+self._file_base
     def __repr__(self):
-        return "DiskDict().link_to_disk('',"+str(self.size_limit)+','+str(self.max_pages)+','+self._file_base+')'
+        return "DiskDict('',"+str(self.size_limit)+','+str(self.max_pages)+','+self._file_base+')'
     def __contains__(self, item):
         i,k = self._finditem(item)
         return k in self.pages[i]

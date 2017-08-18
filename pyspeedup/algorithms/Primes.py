@@ -5,7 +5,10 @@ Once imported, it begins processes designed to help determine what numbers are p
 and uses concurrent branching to split primality tests and prime factorizations and
 speed up the whole process.
 """
-import cPickle
+try:
+    import cPickle as pickle
+except:
+    import pickle
 from os.path import join
 from threading import Thread
 from time import sleep
@@ -20,8 +23,8 @@ if not "D" in globals():
     global q
     global thread
     global file_location
-    D = DiskDict()
-    F = OrderedDiskDict()
+    D = DiskDict("seive")
+    F = OrderedDiskDict("factors")
     c = 3
     p = 3
     q = 9
@@ -42,14 +45,12 @@ def load_primes(location):
     global file_location
     stop_seive()
     del D
-    D = DiskDict() #New seive object.
-    D.link_to_disk("seive",file_location=location, size_limit = 65536, max_pages = 32) #Load or create persistance.
+    D = DiskDict("seive", file_location=location, size_limit = 65536, max_pages = 32) #New seive object.
     del F
-    F = OrderedDiskDict() #A new factor list object.
-    F.link_to_disk("factors",file_location=location, size_limit = 65536, max_pages = 32) #Load or create persistance.
+    F = OrderedDiskDict("factors",file_location=location, size_limit = 65536, max_pages = 32) #A new factor list object.
     try:
         with open(D._file_base+"current",'rb') as f:
-            c,p = cPickle.load(f)
+            c,p = pickle.load(f)
     except:
         c,p = 3,3
     file_location = location
@@ -107,7 +108,7 @@ def _prime_seive():
         c += 2 #We skip all even numbers since 2 is hard coded.
         sleep(0)
     with open(D._file_base+"current",'wb') as f:
-        cPickle.dump((c,p), f)
+        pickle.dump((c,p), f)
 
 def nextPrime(p):
     """
@@ -212,7 +213,7 @@ if __name__ == "__main__":
     from os.path import expanduser
     load_primes("D:/.pyspeedup")
     start_seive()
-    while len(F)<1000000: 
+    while len(F)<1000000:
         sleep(1)
     stop_seive()
     print(c)

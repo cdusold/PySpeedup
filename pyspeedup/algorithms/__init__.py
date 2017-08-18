@@ -21,4 +21,4 @@ from pyspeedup.algorithms._indexCalculus import discreteLog
 from pyspeedup.algorithms._indexCalculus import rowReduce
 from pyspeedup.algorithms._squares import isSquare
 from pyspeedup.algorithms._factor import factor
-import Primes as Primes
+from pyspeedup.algorithms import Primes

@@ -10,7 +10,7 @@ def read(fname):
 
 setup(
     name = "PySpeedup",
-    version = "0.1.2.2",
+    version = "0.1.3.0",
     author = "Chris Dusold",
     author_email = "PySpeedup@ChrisDusold.com",
     description = ("A multiprocess framework for efficient calculations."),

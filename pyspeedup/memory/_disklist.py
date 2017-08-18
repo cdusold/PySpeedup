@@ -1,5 +1,8 @@
 from collections import MutableSequence
-import pickle
+try:
+    import cPickle
+except:
+    import pickle
 from os.path import expanduser,join
 from os import remove, makedirs
 from glob import glob

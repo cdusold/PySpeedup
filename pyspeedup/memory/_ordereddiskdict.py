@@ -1,5 +1,8 @@
 from collections import MutableMapping
-import cPickle
+try:
+    import cPickle as pickle
+except:
+    import pickle
 from os.path import expanduser,join
 from os import remove,makedirs
 from glob import glob
@@ -23,31 +26,28 @@ class OrderedDiskDict(MutableMapping):
     This is accomplished through a rudimentary (for now) hashing scheme to page the
     dictionary into parts.
     """
-    def __init__(self, *args, **kwargs):
-        self.pages=_page()
-        self.pages[0]=_page(*args, **kwargs)
-        self._length = len(self.pages[0])
-        self._total={0}
-        self._queue=[0]
-        self._file_base = None
-    def link_to_disk(self, file_basename, size_limit = 1024, max_pages = 16, file_location = join(expanduser("~"),"PySpeedup")):
-        if len(self)>0:
-            raise Exception("Linking to disk should happen before any data is written.")
-        if self._file_base:
-            raise Exception("Can't link to two file names or locations at the same time.")
-        try:
-            os.makedirs(file_location)
-        except:
-            pass
-        self._file_base = join(file_location,file_basename)
-        self.size_limit = size_limit
+    def __init__(self, file_basename, size_limit = 1024, max_pages = 16, file_location = join(expanduser("~"),"PySpeedup")):
+        if max_pages < 1:
+            raise ValueError("There must be allowed at least one page in RAM.")
         self.max_pages = max_pages
+        if size_limit < 1:
+            raise ValueError("There must be allowed at least one item per page.")
+        self.size_limit = size_limit
+        if file_location:
+            try:
+                makedirs(file_location)
+            except OSError as e:
+                if e.errno != 17:
+                    raise
+                pass
+        self._file_base = join(file_location,file_basename)
+        self.pages = _page()
+        self._length = 0
+        self._total = set()
+        self._queue = []
         try:
             with open(self._file_base+'Len', 'rb') as f:
-                self._length = cPickle.load(f)
-            self._total.remove(0)
-            self._queue=[]
-            del self.pages[0]
+                self.pages.currentDepth,self._length = pickle.load(f)
             for f in glob(self._file_base+'*'):
                 try:
                     self._total.add(int(f[len(self._file_base):]))
@@ -56,7 +56,6 @@ class OrderedDiskDict(MutableMapping):
         except:
             pass
         atexit.register(_exitgracefully,self)
-        return self
     def _guarantee_page(self,k):
         """
         Pulls up the page in question.
@@ -143,14 +142,14 @@ class OrderedDiskDict(MutableMapping):
             for key in self.pages.keys():
                 self._save_page_to_disk(key)
     def _save_page_to_disk(self,number):
-        import cPickle
+        import pickle
         with open(self._file_base+'Len', 'wb') as f:
-            cPickle.dump(self._length,f)
+            pickle.dump(self._length,f)
         if self._file_base:
             if number in self.pages:
                 if len(self.pages[number])>0:
                     with open(self._file_base+str(number),'wb') as f:
-                        cPickle.dump(self.pages[number],f)
+                        pickle.dump(self.pages[number],f)
                 else:
                     self._total.remove(number)
                 del self.pages[number]
@@ -161,7 +160,7 @@ class OrderedDiskDict(MutableMapping):
     def _load_page_from_disk(self,number):
         if self._file_base:
             with open(self._file_base+str(number),'rb') as f:
-                self.pages[number] = cPickle.load(f)
+                self.pages[number] = pickle.load(f)
             self._queue.append(number)
             remove(self._file_base+str(number))
     def __str__(self):
@@ -178,8 +177,7 @@ class OrderedDiskDict(MutableMapping):
 
 
 if __name__ == '__main__':
-    d = DiskDict()
-    d.link_to_disk('testDiskDict',2,2)
+    d = DiskDict('testDiskDict',2,2)
     for i in range(16):
         d[i/10.]=i
         print(d.pages)

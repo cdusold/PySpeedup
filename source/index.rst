@@ -80,6 +80,11 @@ Disk Based Dictionary
 
 .. autoclass:: pyspeedup.memory.DiskDict
 
+Ordered Access Disk Based Dictionary
+---------------------
+
+.. autoclass:: pyspeedup.memory.OrderedDiskDict
+
 Disk Based List
 ---------------
 
