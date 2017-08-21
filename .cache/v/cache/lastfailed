@@ -1,0 +1,6 @@
+{
+  "tests/test_cache.py::CacheTest": true,
+  "tests/test_cache.py::bufferTest": true,
+  "tests/test_cache.py::cachedTest": true,
+  "tests/test_cache.py::fibTest": true
+}

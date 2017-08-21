@@ -68,24 +68,3 @@ Algorithm Module
    .. autofunction:: pyspeedup.algorithms.isSquare
 
    .. autofunction:: pyspeedup.algorithms.factor(N)
-
-Memory Module
-=============
-
-.. automodule:: pyspeedup.memory
-   :members: __init__
-
-Disk Based Dictionary
----------------------
-
-.. autoclass:: pyspeedup.memory.DiskDict
-
-Ordered Access Disk Based Dictionary
----------------------
-
-.. autoclass:: pyspeedup.memory.OrderedDiskDict
-
-Disk Based List
----------------
-
-.. autoclass:: pyspeedup.memory.DiskList

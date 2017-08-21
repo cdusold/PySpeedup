@@ -13,7 +13,7 @@ from os.path import join
 from threading import Thread
 from time import sleep
 import atexit
-from pyspeedup.memory import OrderedDiskDict, DiskDict
+from drivelink import OrderedDict, Dict
 
 if not "D" in globals():
     global D
@@ -23,8 +23,8 @@ if not "D" in globals():
     global q
     global thread
     global file_location
-    D = DiskDict("seive")
-    F = OrderedDiskDict("factors")
+    D = Dict("seive")
+    F = OrderedDict("factors")
     c = 3
     p = 3
     q = 9
@@ -45,9 +45,9 @@ def load_primes(location):
     global file_location
     stop_seive()
     del D
-    D = DiskDict("seive", file_location=location, size_limit = 65536, max_pages = 32) #New seive object.
+    D = Dict("seive", file_location=location, size_limit = 65536, max_pages = 32) #New seive object.
     del F
-    F = OrderedDiskDict("factors",file_location=location, size_limit = 65536, max_pages = 32) #A new factor list object.
+    F = OrderedDict("factors",file_location=location, size_limit = 65536, max_pages = 32) #A new factor list object.
     try:
         with open(D._file_base+"current",'rb') as f:
             c,p = pickle.load(f)
@@ -140,7 +140,7 @@ def factor(N):
         return [-1,abs(N)]
     if N<3:
         return N
-    if N%2==0: #This reduces the factorization diskdict significantly, and gets half of all values.
+    if N%2==0: #This reduces the factorization Dict significantly, and gets half of all values.
         return [2,N//2]
     #TODO: Replace with multiprocess structure, starting with trial division.
     #TODO: Add BailliePSW and/or one of its submethods after trial division.
