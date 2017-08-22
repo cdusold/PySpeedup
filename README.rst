@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/cdusold/PySpeedup.svg?branch=master)](https://travis-ci.org/cdusold/PySpeedup)
+[![Build Status]( https://travis-ci.org/cdusold/PySpeedup.png?branch=master )]( https://travis-ci.org/cdusold/PySpeedup )
 
 About
 =====
